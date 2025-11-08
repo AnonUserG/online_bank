@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  gateway:
+    build: ./gateway
+    container_name: bank-gateway
+    ports:
+      - "8090:8090"
+    environment:
+      SPRING_CLOUD_CONSUL_HOST: consul
+      SPRING_CLOUD_CONSUL_PORT: 8500
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://keycloak:8080/realms/bank
+    depends_on:
+      - consul
+      - keycloak
+    networks:
+      - bank-network
+
+networks:
+  bank-network:

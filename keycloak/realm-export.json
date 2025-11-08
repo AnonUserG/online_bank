@@ -1,0 +1,126 @@
+{
+  "realm": "bank",
+  "enabled": true,
+  "roles": {
+    "realm": [
+      {"name": "accounts.read", "description": "Read accounts"},
+      {"name": "accounts.write", "description": "Write accounts"},
+      {"name": "cash.execute", "description": "Cash operations"},
+      {"name": "transfer.execute", "description": "Transfer operations"},
+      {"name": "notifications.send", "description": "Send notifications"}
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "front-ui",
+      "name": "Front UI",
+      "protocol": "openid-connect",
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "attributes": { "pkce.code.challenge.method": "S256" },
+      "redirectUris": [
+        "http://localhost:8081/*",
+        "http://127.0.0.1:8081/*",
+        "http://front-ui:8081/*",
+        "http://front-ui:8080/*"
+      ],
+      "webOrigins": ["+"],
+      "rootUrl": "http://localhost:8081",
+      "protocolMappers": [
+        {
+          "name": "realm roles",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-realm-role-mapper",
+          "config": {
+            "multivalued": "true",
+            "userinfo.token.claim": "true",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "realm_access.roles"
+          }
+        },
+        {
+          "name": "roles",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-client-role-mapper",
+          "config": {
+            "multivalued": "true",
+            "userinfo.token.claim": "true",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "roles"
+          }
+        }
+      ]
+    },
+    {
+      "clientId": "gateway",
+      "name": "Gateway",
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false
+    },
+    {
+      "clientId": "accounts-service",
+      "name": "Accounts Service",
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "serviceAccountsEnabled": true,
+      "secret": "accounts-secret",
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false
+    },
+    {
+      "clientId": "cash-service",
+      "name": "Cash Service",
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "serviceAccountsEnabled": true,
+      "secret": "cash-secret",
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false
+    },
+    {
+      "clientId": "transfer-service",
+      "name": "Transfer Service",
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "serviceAccountsEnabled": true,
+      "secret": "transfer-secret",
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false
+    },
+    {
+      "clientId": "notifications-service",
+      "name": "Notifications Service",
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "serviceAccountsEnabled": true,
+      "secret": "notifications-secret",
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false
+    }
+  ],
+  "users": [
+    {
+      "username": "alice",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Alice",
+      "credentials": [ { "type": "password", "value": "password", "temporary": false } ],
+      "realmRoles": []
+    },
+    {
+      "username": "bob",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Bob",
+      "credentials": [ { "type": "password", "value": "password", "temporary": false } ],
+      "realmRoles": []
+    }
+  ]
+}

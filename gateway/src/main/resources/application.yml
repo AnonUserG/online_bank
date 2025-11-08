@@ -1,0 +1,108 @@
+server:
+  port: ${SERVER_PORT:8090}
+
+spring:
+  application:
+    name: gateway
+
+  config:
+    import: "optional:consul:"
+
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${OAUTH2_ISSUER_URI:http://keycloak:8080/realms/bank}
+  cloud:
+    consul:
+      host: ${CONSUL_HOST:consul}
+      port: ${CONSUL_PORT:8500}
+      discovery:
+        health-check-path: /actuator/health
+        health-check-interval: 10s
+        prefer-ip-address: true
+      config:
+        enabled: true
+        format: YAML
+        prefixes: ${CONSUL_PREFIXES:config}
+        default-context: application
+        data-key: data
+
+    gateway:
+      httpclient:
+        connect-timeout: 2000
+        response-timeout: 5s
+      default-filters:
+        - TokenRelay
+
+      routes:
+        - id: accounts
+          uri: lb://accounts-service
+          predicates:
+            - Path=/api/accounts/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: accountsCB
+                fallbackUri: forward:/fallback/accounts
+        - id: cash
+          uri: lb://cash-service
+          predicates:
+            - Path=/api/cash/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: cashCB
+                fallbackUri: forward:/fallback/cash
+        - id: transfer
+          uri: lb://transfer-service
+          predicates:
+            - Path=/api/transfer/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: transferCB
+                fallbackUri: forward:/fallback/transfer
+        - id: notifications
+          uri: lb://notifications-service
+          predicates:
+            - Path=/api/notifications/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: notificationsCB
+                fallbackUri: forward:/fallback/notifications
+
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, refresh
+
+
+resilience4j:
+  circuitbreaker:
+    instances:
+      accountsCB:
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 20
+        failureRateThreshold: 50
+        slowCallDurationThreshold: 2s
+        slowCallRateThreshold: 50
+        waitDurationInOpenState: 10s
+      cashCB:
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 20
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+      transferCB:
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 20
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+      notificationsCB:
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 20
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s

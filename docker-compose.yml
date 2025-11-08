@@ -2,6 +2,11 @@ version: '3.8'
 
 services:
   postgres:
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U bank -d bank" ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
     image: postgres:16-alpine
     container_name: bank-postgres
     environment:
@@ -9,7 +14,7 @@ services:
       POSTGRES_PASSWORD: bank123
       POSTGRES_DB: bank
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./init-db:/docker-entrypoint-initdb.d
@@ -17,6 +22,11 @@ services:
       - bank-network
 
   consul:
+    healthcheck:
+      test: [ "CMD", "consul", "info" ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
     image: consul:1.15
     container_name: bank-consul
     ports:
@@ -27,9 +37,16 @@ services:
       - bank-network
 
   keycloak:
+    healthcheck:
+      test: [ "CMD", "curl", "-fsS", "http://localhost:8080/health/ready" ]
+      interval: 5s
+      timeout: 5s
+      retries: 30
     image: quay.io/keycloak/keycloak:23.0
     container_name: bank-keycloak
     environment:
+      KC_HEALTH_ENABLED: "true"
+      KC_METRICS_ENABLED: "true"
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin123
       KC_DB: postgres
@@ -38,8 +55,11 @@ services:
       KC_DB_PASSWORD: bank123
     command:
       - start-dev
+      - --import-realm
     ports:
       - "8080:8080"
+    volumes:
+      - ./keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json
     depends_on:
       - postgres
     networks:
