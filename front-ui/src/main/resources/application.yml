@@ -1,3 +1,6 @@
+server:
+  port: ${SERVER_PORT:8081}
+
 spring:
   application:
     name: front-ui
@@ -5,8 +8,8 @@ spring:
     import: "optional:consul:"
   cloud:
     consul:
-      host: ${CONSUL_HOST:consul}
-      port: ${CONSUL_PORT:8500}
+      host: ${SPRING_CLOUD_CONSUL_HOST:localhost}
+      port: ${SPRING_CLOUD_CONSUL_PORT:8500}
       discovery:
         health-check-path: /actuator/health
         health-check-interval: 10s
@@ -17,6 +20,31 @@ spring:
         prefixes: ${CONSUL_PREFIXES:config}
         default-context: application
         data-key: data
+
+  security:
+    oauth2:
+      client:
+        provider:
+          keycloak:
+            issuer-uri: ${SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_ISSUER_URI:http://localhost:8080/realms/bank}
+            authorization-uri: ${SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_AUTH_URI:http://localhost:8080/realms/bank/protocol/openid-connect/auth}
+            token-uri: ${SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_TOKEN_URI:http://keycloak:8080/realms/bank/protocol/openid-connect/token}
+            user-info-uri: ${SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_USERINFO_URI:}
+            jwk-set-uri: ${SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_JWK_SET_URI:http://keycloak:8080/realms/bank/protocol/openid-connect/certs}
+            end-session-uri: ${SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_END_SESSION_URI:http://localhost:8080/realms/bank/protocol/openid-connect/logout}
+            user-name-attribute: ${SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_USER_NAME_ATTRIBUTE:preferred_username}
+        registration:
+          keycloak:
+            client-id: ${SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_KEYCLOAK_CLIENT_ID:front-ui}
+            client-secret: ${SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_KEYCLOAK_CLIENT_SECRET:}
+            client-name: ${SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_KEYCLOAK_CLIENT_NAME:Keycloak}
+            authorization-grant-type: authorization_code
+            redirect-uri: "${SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_KEYCLOAK_REDIRECT_URI:{baseUrl}/login/oauth2/code/{registrationId}}"
+            scope: ${SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_KEYCLOAK_SCOPE:openid,profile,email}
+
+app:
+  gateway-base-url: ${GATEWAY_BASE_URL:http://localhost:8090}
+
 management:
   endpoints:
     web:

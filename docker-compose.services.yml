@@ -9,7 +9,30 @@ services:
     environment:
       SPRING_CLOUD_CONSUL_HOST: consul
       SPRING_CLOUD_CONSUL_PORT: 8500
-      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://keycloak:8080/realms/bank
+      OAUTH2_JWK_SET_URI: http://keycloak:8080/realms/bank/protocol/openid-connect/certs
+      OAUTH2_EXPECTED_ISSUER: http://localhost:8080/realms/bank
+    depends_on:
+      - consul
+      - keycloak
+    networks:
+      bank-network:
+        aliases:
+          - gateway
+
+  front-ui:
+    build: ./front-ui
+    container_name: bank-front-ui
+    ports:
+      - "8081:8081"
+    environment:
+      GATEWAY_BASE_URL: http://gateway:8090
+      SPRING_CLOUD_CONSUL_HOST: consul
+      SPRING_CLOUD_CONSUL_PORT: 8500
+      SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_ISSUER_URI: http://localhost:8080/realms/bank
+      SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_AUTH_URI: http://localhost:8080/realms/bank/protocol/openid-connect/auth
+      SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_TOKEN_URI: http://keycloak:8080/realms/bank/protocol/openid-connect/token
+      SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_JWK_SET_URI: http://keycloak:8080/realms/bank/protocol/openid-connect/certs
+      SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_END_SESSION_URI: http://localhost:8080/realms/bank/protocol/openid-connect/logout
     depends_on:
       - consul
       - keycloak
