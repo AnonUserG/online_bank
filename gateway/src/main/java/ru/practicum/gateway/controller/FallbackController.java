@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -18,10 +19,12 @@ public class FallbackController {
 
     @GetMapping(value = "/{service}", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<Map<String, Object>> fallbackGet(@PathVariable String service) {
+        String message = "Service '" + service + "' temporarily unavailable. Please try later.";
         Map<String, Object> body = Map.of(
                 "service", service,
                 "status", "unavailable",
-                "message", "Service '" + service + "' temporarily unavailable. Please try later.",
+                "message", message,
+                "errors", List.of(message),
                 "timestamp", Instant.now().toString()
         );
         return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(body);

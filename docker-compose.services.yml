@@ -14,6 +14,7 @@ services:
     depends_on:
       - consul
       - keycloak
+      - accounts-service
     networks:
       bank-network:
         aliases:
@@ -34,6 +35,30 @@ services:
       SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_JWK_SET_URI: http://keycloak:8080/realms/bank/protocol/openid-connect/certs
       SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_END_SESSION_URI: http://localhost:8080/realms/bank/protocol/openid-connect/logout
     depends_on:
+      - consul
+      - keycloak
+      - accounts-service
+    networks:
+      - bank-network
+
+  accounts-service:
+    build: ./accounts-service
+    container_name: bank-accounts-service
+    ports:
+      - "8082:8082"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/bank
+      SPRING_DATASOURCE_USERNAME: bank
+      SPRING_DATASOURCE_PASSWORD: bank123
+      CONSUL_HOST: consul
+      CONSUL_PORT: 8500
+      KEYCLOAK_BASE_URL: http://keycloak:8080
+      KEYCLOAK_REALM: bank
+      KEYCLOAK_ADMIN_USERNAME: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin123
+      NOTIFICATIONS_BASE_URL: http://notifications-service:8084
+    depends_on:
+      - postgres
       - consul
       - keycloak
     networks:

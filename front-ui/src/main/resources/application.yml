@@ -31,7 +31,6 @@ spring:
             token-uri: ${SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_TOKEN_URI:http://keycloak:8080/realms/bank/protocol/openid-connect/token}
             user-info-uri: ${SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_USERINFO_URI:}
             jwk-set-uri: ${SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_JWK_SET_URI:http://keycloak:8080/realms/bank/protocol/openid-connect/certs}
-            end-session-uri: ${SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_END_SESSION_URI:http://localhost:8080/realms/bank/protocol/openid-connect/logout}
             user-name-attribute: ${SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_USER_NAME_ATTRIBUTE:preferred_username}
         registration:
           keycloak:
