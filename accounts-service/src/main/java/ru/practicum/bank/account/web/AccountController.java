@@ -2,6 +2,7 @@ package ru.practicum.bank.account.web;
 
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -47,6 +48,11 @@ public class AccountController {
     public ResponseEntity<List<String>> changePassword(@PathVariable String login,
                                                        @RequestBody @Valid ChangePasswordRequest request) {
         return ResponseEntity.ok(accountService.changePassword(login, request));
+    }
+
+    @DeleteMapping("/users/{login}")
+    public ResponseEntity<List<String>> deleteAccount(@PathVariable String login) {
+        return ResponseEntity.ok(accountService.deleteAccount(login));
     }
 
     @PostMapping("/register")

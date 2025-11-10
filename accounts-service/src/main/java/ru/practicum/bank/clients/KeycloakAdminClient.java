@@ -91,6 +91,20 @@ public class KeycloakAdminClient {
         }
     }
 
+    public void deleteUser(String username) {
+        String token = adminToken();
+        String userId = findUserId(username, token);
+        try {
+            restClient.delete()
+                    .uri("/admin/realms/{realm}/users/{id}", realm, userId)
+                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                    .retrieve()
+                    .toBodilessEntity();
+        } catch (RestClientException ex) {
+            throw new IllegalStateException("Не удалось удалить пользователя в Keycloak", ex);
+        }
+    }
+
     private String adminToken() {
         MultiValueMap<String, String> form = new LinkedMultiValueMap<>();
         form.add("grant_type", "password");

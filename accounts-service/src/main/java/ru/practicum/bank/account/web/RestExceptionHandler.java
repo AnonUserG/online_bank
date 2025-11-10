@@ -6,6 +6,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import ru.practicum.bank.exception.AccountAlreadyExistsException;
+import ru.practicum.bank.exception.AccountDeletionException;
 import ru.practicum.bank.exception.AccountNotFoundException;
 
 import java.util.List;
@@ -21,6 +22,11 @@ public class RestExceptionHandler {
     @ExceptionHandler(AccountAlreadyExistsException.class)
     public ResponseEntity<List<String>> handleAlreadyExists(AccountAlreadyExistsException ex) {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(List.of(ex.getMessage()));
+    }
+
+    @ExceptionHandler(AccountDeletionException.class)
+    public ResponseEntity<List<String>> handleDeletion(AccountDeletionException ex) {
+        return ResponseEntity.badRequest().body(List.of(ex.getMessage()));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

@@ -36,6 +36,10 @@ public class NotificationsClient {
         send("PASSWORD_CHANGED", login, "Пароль обновлен");
     }
 
+    public void sendAccountDeleted(String login) {
+        send("ACCOUNT_DELETED", login, "Аккаунт удален");
+    }
+
     private void send(String type, String login, String message) {
         if (!enabled) {
             return;

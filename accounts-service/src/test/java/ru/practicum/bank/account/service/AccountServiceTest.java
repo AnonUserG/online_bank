@@ -4,6 +4,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import ru.practicum.bank.account.model.AccountEntity;
+import ru.practicum.bank.account.model.BankAccountEntity;
 import ru.practicum.bank.account.repository.AccountRepository;
 import ru.practicum.bank.account.web.dto.ChangePasswordRequest;
 import ru.practicum.bank.account.web.dto.RegisterAccountRequest;
@@ -11,7 +12,9 @@ import ru.practicum.bank.account.web.dto.UpdateAccountRequest;
 import ru.practicum.bank.clients.KeycloakAdminClient;
 import ru.practicum.bank.clients.NotificationsClient;
 import ru.practicum.bank.exception.AccountAlreadyExistsException;
+import ru.practicum.bank.exception.AccountDeletionException;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.Optional;
 
@@ -93,6 +96,44 @@ class AccountServiceTest {
         assertThat(entity.getName()).isEqualTo("Alice Cooper");
         verify(repository).save(entity);
         verify(notificationsClient).sendProfileUpdated("alice");
+    }
+
+    @Test
+    void deleteAccountFailsWhenBalancePositive() {
+        AccountEntity entity = new AccountEntity();
+        entity.setLogin("alice");
+        entity.setBirthdate(LocalDate.of(1990, 1, 1));
+        entity.setName("Alice");
+        BankAccountEntity bank = new BankAccountEntity();
+        bank.setBalance(BigDecimal.TEN);
+        entity.setBankAccount(bank);
+        when(repository.findByLogin("alice")).thenReturn(Optional.of(entity));
+
+        assertThatThrownBy(() -> service.deleteAccount("alice"))
+                .isInstanceOf(AccountDeletionException.class)
+                .hasMessageContaining("Нельзя удалить аккаунт");
+
+        verifyNoInteractions(keycloakAdminClient);
+        verify(repository, never()).delete(any());
+    }
+
+    @Test
+    void deleteAccountRemovesEntityWhenBalanceZero() {
+        AccountEntity entity = new AccountEntity();
+        entity.setLogin("alice");
+        entity.setBirthdate(LocalDate.of(1990, 1, 1));
+        entity.setName("Alice");
+        BankAccountEntity bank = new BankAccountEntity();
+        bank.setBalance(BigDecimal.ZERO);
+        entity.setBankAccount(bank);
+        when(repository.findByLogin("alice")).thenReturn(Optional.of(entity));
+
+        var result = service.deleteAccount("alice");
+
+        assertThat(result).isEmpty();
+        verify(keycloakAdminClient).deleteUser("alice");
+        verify(repository).delete(entity);
+        verify(notificationsClient).sendAccountDeleted("alice");
     }
 }
 

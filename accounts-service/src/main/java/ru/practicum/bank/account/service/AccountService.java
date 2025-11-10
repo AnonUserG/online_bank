@@ -12,6 +12,7 @@ import ru.practicum.bank.account.web.dto.UpdateAccountRequest;
 import ru.practicum.bank.clients.KeycloakAdminClient;
 import ru.practicum.bank.clients.NotificationsClient;
 import ru.practicum.bank.exception.AccountAlreadyExistsException;
+import ru.practicum.bank.exception.AccountDeletionException;
 import ru.practicum.bank.exception.AccountNotFoundException;
 
 import java.math.BigDecimal;
@@ -97,6 +98,23 @@ public class AccountService {
 
         keycloakAdminClient.resetPassword(login, request.password());
         notificationsClient.sendPasswordChanged(login);
+        return List.of();
+    }
+
+    @Transactional
+    public List<String> deleteAccount(String login) {
+        var entity = repository.findByLogin(login)
+                .orElseThrow(() -> new AccountNotFoundException("User '%s' not found".formatted(login)));
+
+        var bank = entity.getBankAccount();
+        var balance = bank != null ? bank.getBalance() : BigDecimal.ZERO;
+        if (balance.compareTo(BigDecimal.ZERO) > 0) {
+            throw new AccountDeletionException("Нельзя удалить аккаунт с ненулевым балансом");
+        }
+
+        keycloakAdminClient.deleteUser(login);
+        repository.delete(entity);
+        notificationsClient.sendAccountDeleted(login);
         return List.of();
     }
 
