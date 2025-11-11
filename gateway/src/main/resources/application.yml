@@ -32,7 +32,7 @@ spring:
     gateway:
       httpclient:
         connect-timeout: 2000
-        response-timeout: 5s
+        response-timeout: 120s
       default-filters:
         - TokenRelay
 

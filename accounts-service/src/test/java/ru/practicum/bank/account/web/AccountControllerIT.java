@@ -28,11 +28,13 @@ import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @Testcontainers
@@ -92,7 +94,7 @@ class AccountControllerIT {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(payload)))
                 .andExpect(status().isBadRequest())
-                .andExpect(content().string(org.hamcrest.Matchers.containsString("Возраст должен быть не меньше 18 лет")));
+                .andExpect(jsonPath("$[0]").value("Возраст должен быть не меньше 18 лет"));
     }
 
     @Test
@@ -101,7 +103,7 @@ class AccountControllerIT {
 
         mockMvc.perform(delete("/api/accounts/users/{login}", "rich-user"))
                 .andExpect(status().isBadRequest())
-                .andExpect(content().string(org.hamcrest.Matchers.containsString("Нельзя удалить аккаунт")));
+                .andExpect(jsonPath("$[0]").value(containsString("Нельзя удалить аккаунт")));
 
         verify(keycloakAdminClient, never()).deleteUser("rich-user");
     }
@@ -112,7 +114,8 @@ class AccountControllerIT {
 
         mockMvc.perform(delete("/api/accounts/users/{login}", "empty-user"))
                 .andExpect(status().isOk())
-                .andExpect(content().string(org.hamcrest.Matchers.containsString("[]")));
+                .andExpect(jsonPath("$").isArray())
+                .andExpect(jsonPath("$", hasSize(0)));
 
         assertThat(accountRepository.findByLogin("empty-user")).isEmpty();
         verify(keycloakAdminClient).deleteUser("empty-user");

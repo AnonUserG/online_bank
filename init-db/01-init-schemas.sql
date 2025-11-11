@@ -153,3 +153,44 @@ INSERT INTO exchange.currency_rates (base_currency, target_currency, rate) VALUE
                                                                                ('CNY','RUB',12.660000),
                                                                                ('CNY','USD',0.139000)
 ON CONFLICT (base_currency, target_currency) DO NOTHING;
+
+-- ==========================================
+-- 9) демо-пользователи alice/bob (Keycloak)
+-- ==========================================
+WITH upsert_bob AS (
+    INSERT INTO accounts.users (id, login, name, email, birthdate, kc_id, active, created_at, updated_at)
+    VALUES (gen_random_uuid(), 'bob', 'Bob Example', 'bob@example.com', DATE '1990-01-10', NULL, TRUE, now(), now())
+    ON CONFLICT (login) DO UPDATE
+        SET name = EXCLUDED.name,
+            email = EXCLUDED.email,
+            birthdate = EXCLUDED.birthdate,
+            active = TRUE,
+            updated_at = now()
+    RETURNING id
+)
+INSERT INTO accounts.bank_accounts (id, user_id, account_number, currency, balance, status, version, created_at, updated_at)
+SELECT gen_random_uuid(), id, '40800000000000000001', 'RUB', 1500.00, 'ACTIVE', 0, now(), now()
+FROM upsert_bob
+ON CONFLICT (user_id) DO UPDATE
+    SET balance = EXCLUDED.balance,
+        status = EXCLUDED.status,
+        updated_at = now();
+
+WITH upsert_alice AS (
+    INSERT INTO accounts.users (id, login, name, email, birthdate, kc_id, active, created_at, updated_at)
+    VALUES (gen_random_uuid(), 'alice', 'Alice Example', 'alice@example.com', DATE '1992-05-15', NULL, TRUE, now(), now())
+    ON CONFLICT (login) DO UPDATE
+        SET name = EXCLUDED.name,
+            email = EXCLUDED.email,
+            birthdate = EXCLUDED.birthdate,
+            active = TRUE,
+            updated_at = now()
+    RETURNING id
+)
+INSERT INTO accounts.bank_accounts (id, user_id, account_number, currency, balance, status, version, created_at, updated_at)
+SELECT gen_random_uuid(), id, '40800000000000000002', 'RUB', 750.00, 'ACTIVE', 0, now(), now()
+FROM upsert_alice
+ON CONFLICT (user_id) DO UPDATE
+    SET balance = EXCLUDED.balance,
+        status = EXCLUDED.status,
+        updated_at = now();
