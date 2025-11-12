@@ -5,8 +5,15 @@
 ## Запуск
 
 ```bash
-git clone <repo-url>
-cd bank
+git clone https://github.com/AnonUserG/online_bank.git
+cd online_bank
 mvn clean package
 docker compose -f docker-compose.yml -f docker-compose.services.yml up -d --build
 ```
+Дождитесь загрузки всех сервисов.
+
+Авторизуйтесь используя:
+логин= bob
+пароль= password
+
+Изначально у 'bob' на балансе 1500р
