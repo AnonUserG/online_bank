@@ -1,0 +1,21 @@
+﻿spring:
+  main:
+    web-application-type: reactive
+  cloud:
+    consul:
+      enabled: false
+      discovery:
+        enabled: false
+      config:
+        enabled: false
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: http://localhost/test/jwks
+          expected-issuer: http://localhost/test/issuer
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health

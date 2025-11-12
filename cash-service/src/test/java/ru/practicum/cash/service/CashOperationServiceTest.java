@@ -63,6 +63,43 @@ class CashOperationServiceTest {
     }
 
     @Test
+    void withdrawSuccessUpdatesStatusAndNotifies() {
+        var accountId = UUID.randomUUID();
+        AccountDetails current = new AccountDetails(
+                UUID.randomUUID(),
+                accountId,
+                "alice",
+                "4080",
+                "RUB",
+                BigDecimal.valueOf(200)
+        );
+        AccountDetails updated = new AccountDetails(
+                current.userId(),
+                current.bankAccountId(),
+                current.login(),
+                current.accountNumber(),
+                current.currency(),
+                BigDecimal.valueOf(150)
+        );
+        when(accountsClient.getAccountDetails("alice")).thenReturn(current);
+        when(repository.save(any(CashOperationEntity.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(accountsClient.adjustBalance(eq("alice"), any(BalanceAdjustmentCommand.class))).thenReturn(updated);
+
+        var result = service.process(new CashOperationRequest("alice", CashAction.GET, BigDecimal.valueOf(50)));
+
+        assertThat(result).isEmpty();
+        ArgumentCaptor<BalanceAdjustmentCommand> commandCaptor = ArgumentCaptor.forClass(BalanceAdjustmentCommand.class);
+        verify(accountsClient).adjustBalance(eq("alice"), commandCaptor.capture());
+        assertThat(commandCaptor.getValue().type()).isEqualTo(OperationType.WITHDRAW);
+        assertThat(commandCaptor.getValue().amount()).isEqualByComparingTo("50.00");
+        ArgumentCaptor<CashOperationEntity> saveCaptor = ArgumentCaptor.forClass(CashOperationEntity.class);
+        verify(repository, atLeast(2)).save(saveCaptor.capture());
+        var lastSaved = saveCaptor.getAllValues().get(saveCaptor.getAllValues().size() - 1);
+        assertThat(lastSaved.getStatus()).isEqualTo(OperationStatus.DONE);
+        verify(notificationsClient).sendCashEvent("alice", OperationType.WITHDRAW, new BigDecimal("50.00"), "RUB");
+    }
+
+    @Test
     void withdrawFailsWhenNotEnoughMoney() {
         AccountDetails details = new AccountDetails(
                 UUID.randomUUID(),
@@ -103,5 +140,16 @@ class CashOperationServiceTest {
         verify(repository, atLeast(2)).save(captor.capture());
         List<CashOperationEntity> saved = captor.getAllValues();
         assertThat(saved.get(saved.size() - 1).getStatus()).isEqualTo(OperationStatus.FAILED);
+    }
+
+    @Test
+    void returnsErrorWhenAccountNotFound() {
+        when(accountsClient.getAccountDetails("missing")).thenReturn(null);
+
+        var result = service.process(new CashOperationRequest("missing", CashAction.PUT, BigDecimal.ONE));
+
+        assertThat(result).hasSize(1);
+        verify(repository, never()).save(any());
+        verifyNoInteractions(notificationsClient);
     }
 }
