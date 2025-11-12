@@ -1,6 +1,7 @@
 package ru.practicum.front.controller;
 
 import jakarta.validation.constraints.NotBlank;
+import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.client.OAuth2AuthorizedClient;
@@ -8,26 +9,53 @@ import org.springframework.security.oauth2.client.annotation.RegisteredOAuth2Aut
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import ru.practicum.front.mapper.AccountMapper;
+import ru.practicum.front.service.Dto;
 import ru.practicum.front.service.GatewayApiClient;
+import ru.practicum.front.service.dto.AccountResponse;
 import ru.practicum.front.util.ValidationUtils;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
+/**
+ * MVC-контроллер пользовательских страниц.
+ */
 @Controller
+@RequiredArgsConstructor
 public class PagesController {
 
     private final GatewayApiClient api;
+    private final AccountMapper accountMapper;
 
-    public PagesController(GatewayApiClient api) {
-        this.api = api;
+    @ModelAttribute("passwordErrors")
+    public List<String> passwordErrors() {
+        return List.of();
+    }
+
+    @ModelAttribute("userAccountErrors")
+    public List<String> userAccountErrors() {
+        return List.of();
+    }
+
+    @ModelAttribute("cashErrors")
+    public List<String> cashErrors() {
+        return List.of();
+    }
+
+    @ModelAttribute("transferOtherErrors")
+    public List<String> transferOtherErrors() {
+        return List.of();
     }
 
     @GetMapping("/")
@@ -44,37 +72,27 @@ public class PagesController {
                            @ModelAttribute("cashErrors") List<String> cashErrors,
                            @ModelAttribute("transferOtherErrors") List<String> transferOtherErrors) {
 
-        // Авторизованный пользователь обязателен
         String bearer = client.getAccessToken().getTokenValue();
         String login = Optional.ofNullable(oidcUser.getPreferredUsername())
-                .orElse(oidcUser.getName()); // fallback
+                .orElse(oidcUser.getName());
 
-        // Профиль пользователя (login, name, birthdate)
-        Map<String, Object> profile = api.getUserProfile(login, bearer);
-        String name = Objects.toString(profile.getOrDefault("name", ""), "");
-        LocalDate birthdate = Optional.ofNullable(profile.get("birthdate"))
-                .map(Object::toString).map(LocalDate::parse).orElse(null);
+        AccountResponse profileResponse = api.getUserProfile(login, bearer);
+        Dto.UserProfile profile = accountMapper.toUserProfile(profileResponse);
 
-        // Список всех пользователей для селекта перевода
-        List<Map<String, Object>> usersRaw = api.getAllUsers(bearer);
-        // Оставим как есть — шаблон ожидает user.getLogin() / user.getName()
-        // Для простоты положим Map'ы напрямую
-        model.addAttribute("users", usersRaw);
+        List<Dto.UserShort> users = api.getAllUsers(bearer).stream()
+                .map(accountMapper::toUserShort)
+                .toList();
 
-        model.addAttribute("login", login);
-        model.addAttribute("name", name);
-        model.addAttribute("birthdate", birthdate);
-
-        // Ошибки (null, если не выполнялись операции)
-        model.addAttribute("passwordErrors", (passwordErrors == null || passwordErrors.isEmpty()) ? null : passwordErrors);
-        model.addAttribute("userAccountErrors", (userAccountErrors == null || userAccountErrors.isEmpty()) ? null : userAccountErrors);
-        model.addAttribute("cashErrors", (cashErrors == null || cashErrors.isEmpty()) ? null : cashErrors);
-        model.addAttribute("transferOtherErrors", (transferOtherErrors == null || transferOtherErrors.isEmpty()) ? null : transferOtherErrors);
-
+        model.addAttribute("users", users);
+        model.addAttribute("login", profile.login());
+        model.addAttribute("name", profile.name());
+        model.addAttribute("birthdate", profile.birthdate());
+        model.addAttribute("passwordErrors", normalizeErrors(passwordErrors));
+        model.addAttribute("userAccountErrors", normalizeErrors(userAccountErrors));
+        model.addAttribute("cashErrors", normalizeErrors(cashErrors));
+        model.addAttribute("transferOtherErrors", normalizeErrors(transferOtherErrors));
         return "main";
     }
-
-    // =================== Смена пароля ===================
 
     @PostMapping("/user/{login}/editPassword")
     public String editPassword(@PathVariable("login") String pathLogin,
@@ -98,11 +116,9 @@ public class PagesController {
 
         String bearer = client.getAccessToken().getTokenValue();
         List<String> backendErrors = safeList(api.changePassword(login, password, bearer));
-        ra.addFlashAttribute("passwordErrors", backendErrors.isEmpty() ? null : backendErrors);
+        ra.addFlashAttribute("passwordErrors", normalizeErrors(backendErrors));
         return "redirect:/main";
     }
-
-    // =================== Редактирование профиля ===================
 
     @PostMapping("/user/{login}/editUserAccount")
     public String editUserAccount(@PathVariable("login") String pathLogin,
@@ -114,7 +130,7 @@ public class PagesController {
 
         String login = oidcUser.getPreferredUsername();
         if (!Objects.equals(login, pathLogin)) {
-            ra.addFlashAttribute("userAccountErrors", List.of("Нельзя изменять чужой профиль"));
+            ra.addFlashAttribute("userAccountErrors", List.of("Нельзя редактировать чужой профиль"));
             return "redirect:/main";
         }
 
@@ -126,11 +142,9 @@ public class PagesController {
 
         String bearer = client.getAccessToken().getTokenValue();
         List<String> backendErrors = safeList(api.updateProfile(login, name, birthdate.toString(), bearer));
-        ra.addFlashAttribute("userAccountErrors", backendErrors.isEmpty() ? null : backendErrors);
+        ra.addFlashAttribute("userAccountErrors", normalizeErrors(backendErrors));
         return "redirect:/main";
     }
-
-    // =================== Внесение/снятие денег ===================
 
     @PostMapping("/user/{login}/cash")
     public String cash(@PathVariable("login") String pathLogin,
@@ -148,11 +162,9 @@ public class PagesController {
 
         String bearer = client.getAccessToken().getTokenValue();
         List<String> backendErrors = safeList(api.cash(login, action, value, bearer));
-        ra.addFlashAttribute("cashErrors", backendErrors.isEmpty() ? null : backendErrors);
+        ra.addFlashAttribute("cashErrors", normalizeErrors(backendErrors));
         return "redirect:/main";
     }
-
-    // =================== Перевод ===================
 
     @PostMapping("/user/{login}/transfer")
     public String transfer(@PathVariable("login") String fromLogin,
@@ -164,7 +176,7 @@ public class PagesController {
 
         String login = oidcUser.getPreferredUsername();
         if (!Objects.equals(login, fromLogin)) {
-            ra.addFlashAttribute("transferOtherErrors", List.of("Нельзя переводить с чужого счёта"));
+            ra.addFlashAttribute("transferOtherErrors", List.of("Нельзя переводить деньги с чужого счёта"));
             return "redirect:/main";
         }
 
@@ -177,11 +189,9 @@ public class PagesController {
         String bearer = client.getAccessToken().getTokenValue();
         String normalizedValue = new BigDecimal(value.trim()).setScale(2, RoundingMode.HALF_UP).toPlainString();
         List<String> backendErrors = safeList(api.transfer(fromLogin, toLogin, normalizedValue, bearer));
-        ra.addFlashAttribute("transferOtherErrors", backendErrors.isEmpty() ? null : backendErrors);
+        ra.addFlashAttribute("transferOtherErrors", normalizeErrors(backendErrors));
         return "redirect:/main";
     }
-
-    // =================== Регистрация ===================
 
     @GetMapping("/signup")
     public String signupForm() {
@@ -206,7 +216,6 @@ public class PagesController {
             return "signup";
         }
 
-        // Регистрация: открытый эндпоинт Accounts через gateway
         List<String> backendErrors = safeList(api.register(login, password, name, birthdate.toString()));
         if (!backendErrors.isEmpty()) {
             model.addAttribute("login", login);
@@ -216,33 +225,15 @@ public class PagesController {
             return "signup";
         }
 
-        // По ТЗ — автоавторизация. Практический компромисс: редиректим на начало OIDC-логина.
+        ra.addFlashAttribute("globalMessage", "Регистрация успешно завершена. Авторизуйтесь снова.");
         return "redirect:/oauth2/authorization/keycloak";
     }
 
-    // ----------------- helpers -----------------
-    @ModelAttribute("passwordErrors")
-    public List<String> passwordErrors() { return null; }
-    @ModelAttribute("userAccountErrors")
-    public List<String> userAccountErrors() { return null; }
-    @ModelAttribute("cashErrors")
-    public List<String> cashErrors() { return null; }
-    @ModelAttribute("transferOtherErrors")
-    public List<String> transferOtherErrors() { return null; }
+    private List<String> safeList(List<String> list) {
+        return list == null ? List.of() : list;
+    }
 
-    @SuppressWarnings("unchecked")
-    private static List<String> safeList(Object maybeList) {
-        if (maybeList == null) return List.of();
-        if (maybeList instanceof List<?> l) {
-            // Преобразуем элементы в строки для шаблона
-            return l.stream().map(String::valueOf).toList();
-        }
-        if (maybeList instanceof Map<?,?> m && m.containsKey("errors")) {
-            Object val = m.get("errors");
-            if (val instanceof List<?> l2) return l2.stream().map(String::valueOf).toList();
-            return List.of(String.valueOf(val));
-        }
-        if (maybeList instanceof String s) return List.of(s);
-        return List.of(String.valueOf(maybeList));
+    private List<String> normalizeErrors(List<String> errors) {
+        return (errors == null || errors.isEmpty()) ? null : errors;
     }
 }

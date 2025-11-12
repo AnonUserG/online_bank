@@ -1,7 +1,7 @@
 package ru.practicum.cash.service;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.cash.clients.AccountsClient;
@@ -19,22 +19,17 @@ import java.math.RoundingMode;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Бизнес-логика операций внесения и снятия средств.
+ */
 @Service
+@RequiredArgsConstructor
+@Slf4j
 public class CashOperationService {
-
-    private static final Logger log = LoggerFactory.getLogger(CashOperationService.class);
 
     private final CashOperationRepository repository;
     private final AccountsClient accountsClient;
     private final NotificationsClient notificationsClient;
-
-    public CashOperationService(CashOperationRepository repository,
-                                AccountsClient accountsClient,
-                                NotificationsClient notificationsClient) {
-        this.repository = repository;
-        this.accountsClient = accountsClient;
-        this.notificationsClient = notificationsClient;
-    }
 
     @Transactional
     public List<String> process(CashOperationRequest request) {
@@ -50,7 +45,6 @@ public class CashOperationService {
 
             OperationType type = request.action().toOperationType();
             BigDecimal amount = normalizeAmount(request.value());
-
             BigDecimal currentBalance = account.balance() == null ? BigDecimal.ZERO : account.balance();
             if (type == OperationType.WITHDRAW && currentBalance.compareTo(amount) < 0) {
                 return List.of("Недостаточно средств на счёте");

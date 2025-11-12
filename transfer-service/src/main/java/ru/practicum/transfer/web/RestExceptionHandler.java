@@ -7,6 +7,9 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.util.List;
 
+/**
+ * Обработчик ошибок REST-слоя.
+ */
 @RestControllerAdvice
 public class RestExceptionHandler {
 

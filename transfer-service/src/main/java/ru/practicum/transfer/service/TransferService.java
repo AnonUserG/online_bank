@@ -1,17 +1,19 @@
 package ru.practicum.transfer.service;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.transfer.clients.AccountsClient;
 import ru.practicum.transfer.clients.NotificationsClient;
 import ru.practicum.transfer.clients.dto.AccountDetails;
 import ru.practicum.transfer.clients.dto.BalanceAdjustmentCommand;
+import ru.practicum.transfer.mapper.TransferMapper;
 import ru.practicum.transfer.model.OperationType;
 import ru.practicum.transfer.model.TransferEntity;
 import ru.practicum.transfer.model.TransferStatus;
 import ru.practicum.transfer.repository.TransferRepository;
+import ru.practicum.transfer.service.dto.TransferPlan;
 import ru.practicum.transfer.web.dto.TransferRequest;
 
 import java.math.BigDecimal;
@@ -19,22 +21,18 @@ import java.math.RoundingMode;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Бизнес-логика переводов между счетами.
+ */
 @Service
+@RequiredArgsConstructor
+@Slf4j
 public class TransferService {
-
-    private static final Logger log = LoggerFactory.getLogger(TransferService.class);
 
     private final TransferRepository repository;
     private final AccountsClient accountsClient;
     private final NotificationsClient notificationsClient;
-
-    public TransferService(TransferRepository repository,
-                           AccountsClient accountsClient,
-                           NotificationsClient notificationsClient) {
-        this.repository = repository;
-        this.accountsClient = accountsClient;
-        this.notificationsClient = notificationsClient;
-    }
+    private final TransferMapper transferMapper;
 
     @Transactional
     public List<String> process(TransferRequest request) {
@@ -59,12 +57,14 @@ public class TransferService {
                 return List.of("Недостаточно средств на счёте");
             }
 
-            entity = new TransferEntity();
-            entity.setFromAccountId(fromAccount.bankAccountId());
-            entity.setToAccountId(toAccount.bankAccountId());
-            entity.setAmount(amount);
-            entity.setCurrency(fromAccount.currency());
-            entity.setIdempotencyKey(UUID.randomUUID().toString());
+            var plan = new TransferPlan(
+                    fromAccount.bankAccountId(),
+                    toAccount.bankAccountId(),
+                    amount,
+                    fromAccount.currency(),
+                    UUID.randomUUID().toString()
+            );
+            entity = transferMapper.toEntity(plan);
             repository.save(entity);
 
             accountsClient.adjustBalance(request.fromLogin(),

@@ -2,14 +2,18 @@ package ru.practicum.accounts.account.web.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import java.time.LocalDate;
 import ru.practicum.accounts.validation.Adult;
 
-import java.time.LocalDate;
-
+/**
+ * Payload for profile updates.
+ */
 public record UpdateAccountRequest(
-        @NotBlank(message = "Имя обязательно") String name,
-        @NotNull(message = "Дата рождения обязательна")
-        @Adult(value = 18, message = "Возраст должен быть не меньше 18 лет") LocalDate birthdate
+        @NotBlank(message = "name is required")
+        String name,
+        @NotNull(message = "birthdate is required")
+        @Adult(value = 18, message = "user must be at least 18 years old")
+        LocalDate birthdate
 ) {
 }
 

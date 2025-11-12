@@ -1,7 +1,19 @@
 package ru.practicum.accounts.account.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mapstruct.factory.Mappers;
 import org.mockito.ArgumentCaptor;
 import ru.practicum.accounts.account.model.AccountEntity;
 import ru.practicum.accounts.account.model.BankAccountEntity;
@@ -18,15 +30,6 @@ import ru.practicum.accounts.exception.AccountAlreadyExistsException;
 import ru.practicum.accounts.exception.AccountDeletionException;
 import ru.practicum.accounts.exception.InsufficientFundsException;
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.util.Optional;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
-
 class AccountServiceTest {
 
     private AccountRepository repository;
@@ -37,11 +40,11 @@ class AccountServiceTest {
 
     @BeforeEach
     void setUp() {
-        repository = mock(AccountRepository.class);
-        bankAccountRepository = mock(BankAccountRepository.class);
-        keycloakAdminClient = mock(KeycloakAdminClient.class);
-        notificationsClient = mock(NotificationsClient.class);
-        service = new AccountService(repository, bankAccountRepository, new AccountMapper(), keycloakAdminClient, notificationsClient);
+        repository = org.mockito.Mockito.mock(AccountRepository.class);
+        bankAccountRepository = org.mockito.Mockito.mock(BankAccountRepository.class);
+        keycloakAdminClient = org.mockito.Mockito.mock(KeycloakAdminClient.class);
+        notificationsClient = org.mockito.Mockito.mock(NotificationsClient.class);
+        service = new AccountService(repository, bankAccountRepository, Mappers.getMapper(AccountMapper.class), keycloakAdminClient, notificationsClient);
     }
 
     @Test
@@ -165,7 +168,7 @@ class AccountServiceTest {
         assertThatThrownBy(() -> service.adjustBalance("alice",
                 new BalanceAdjustmentRequest(BigDecimal.valueOf(50), BalanceOperationType.WITHDRAW)))
                 .isInstanceOf(InsufficientFundsException.class)
-                .hasMessageContaining("Недостаточно средств");
+                .hasMessageContaining("Insufficient funds on source account");
 
         verify(bankAccountRepository, never()).save(any());
     }
@@ -186,3 +189,5 @@ class AccountServiceTest {
         return bank;
     }
 }
+
+

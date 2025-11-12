@@ -1,9 +1,12 @@
 package ru.practicum.cash.clients.dto;
 
-import java.math.BigDecimal;
-
 import ru.practicum.cash.model.OperationType;
 
+import java.math.BigDecimal;
+
+/**
+ * Команда на изменение баланса.
+ */
 public record BalanceAdjustmentCommand(
         BigDecimal amount,
         OperationType type

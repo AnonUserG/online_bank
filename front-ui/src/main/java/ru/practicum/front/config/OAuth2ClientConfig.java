@@ -27,6 +27,9 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * Ручная настройка клиентского подключения к Keycloak.
+ */
 @Configuration
 public class OAuth2ClientConfig {
 
@@ -159,3 +162,4 @@ public class OAuth2ClientConfig {
         return value;
     }
 }
+

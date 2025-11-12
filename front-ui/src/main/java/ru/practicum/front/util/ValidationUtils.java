@@ -6,6 +6,9 @@ import java.time.Period;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Локальные проверки полей форм.
+ */
 public final class ValidationUtils {
 
     private ValidationUtils() {

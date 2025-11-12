@@ -1,5 +1,6 @@
 package ru.practicum.accounts.account.web;
 
+import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -10,8 +11,9 @@ import ru.practicum.accounts.exception.AccountDeletionException;
 import ru.practicum.accounts.exception.AccountNotFoundException;
 import ru.practicum.accounts.exception.InsufficientFundsException;
 
-import java.util.List;
-
+/**
+ * Centralized REST exception handling.
+ */
 @RestControllerAdvice
 public class RestExceptionHandler {
 

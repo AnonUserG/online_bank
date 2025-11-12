@@ -1,5 +1,6 @@
 package ru.practicum.accounts.account.service;
 
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.accounts.account.model.AccountEntity;
@@ -25,7 +26,11 @@ import java.security.SecureRandom;
 import java.util.List;
 import java.util.Locale;
 
+/**
+ * Core business logic for working with accounts.
+ */
 @Service
+@RequiredArgsConstructor
 public class AccountService {
 
     private final AccountRepository repository;
@@ -34,18 +39,6 @@ public class AccountService {
     private final KeycloakAdminClient keycloakAdminClient;
     private final NotificationsClient notificationsClient;
     private final SecureRandom random = new SecureRandom();
-
-    public AccountService(AccountRepository repository,
-                          BankAccountRepository bankAccountRepository,
-                          AccountMapper mapper,
-                          KeycloakAdminClient keycloakAdminClient,
-                          NotificationsClient notificationsClient) {
-        this.repository = repository;
-        this.bankAccountRepository = bankAccountRepository;
-        this.mapper = mapper;
-        this.keycloakAdminClient = keycloakAdminClient;
-        this.notificationsClient = notificationsClient;
-    }
 
     @Transactional(readOnly = true)
     public AccountDto getProfile(String login) {
@@ -98,10 +91,9 @@ public class AccountService {
         bankAccount.setAccountNumber(generateAccountNumber());
         bankAccount.setCurrency("RUB");
         bankAccount.setBalance(BigDecimal.ZERO);
-
         account.setBankAccount(bankAccount);
-        repository.save(account);
 
+        repository.save(account);
         notificationsClient.sendRegistrationCompleted(request.login());
         return List.of();
     }
@@ -124,7 +116,7 @@ public class AccountService {
         var bank = entity.getBankAccount();
         var balance = bank != null ? bank.getBalance() : BigDecimal.ZERO;
         if (balance.compareTo(BigDecimal.ZERO) > 0) {
-            throw new AccountDeletionException("Нельзя удалить аккаунт с ненулевым балансом");
+            throw new AccountDeletionException("Account contains funds and cannot be removed");
         }
 
         keycloakAdminClient.deleteUser(login);
@@ -144,7 +136,7 @@ public class AccountService {
             bank.setBalance(bank.getBalance().add(amount));
         } else {
             if (bank.getBalance().compareTo(amount) < 0) {
-                throw new InsufficientFundsException("Недостаточно средств на счёте");
+                throw new InsufficientFundsException("Insufficient funds on source account");
             }
             bank.setBalance(bank.getBalance().subtract(amount));
         }
@@ -155,7 +147,6 @@ public class AccountService {
     }
 
     private String generateAccountNumber() {
-        // simple pseudo account number: 20 digits
         var builder = new StringBuilder("4080");
         while (builder.length() < 20) {
             builder.append(random.nextInt(10));
@@ -163,4 +154,6 @@ public class AccountService {
         return builder.toString();
     }
 }
+
+
 

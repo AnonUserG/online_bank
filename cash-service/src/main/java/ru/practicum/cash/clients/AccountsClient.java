@@ -2,8 +2,7 @@ package ru.practicum.cash.clients;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
@@ -17,10 +16,12 @@ import ru.practicum.cash.clients.dto.BalanceAdjustmentCommand;
 import java.time.Duration;
 import java.util.List;
 
+/**
+ * HTTP-клиент для обращения к сервису аккаунтов.
+ */
 @Component
+@Slf4j
 public class AccountsClient {
-
-    private static final Logger log = LoggerFactory.getLogger(AccountsClient.class);
 
     private final RestClient restClient;
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -75,12 +76,15 @@ public class AccountsClient {
             return "Ошибка сервиса аккаунтов";
         }
         try {
-            List<String> errors = objectMapper.readValue(payload, objectMapper.getTypeFactory().constructCollectionType(List.class, String.class));
+            List<String> errors = objectMapper.readValue(
+                    payload,
+                    objectMapper.getTypeFactory().constructCollectionType(List.class, String.class)
+            );
             if (!errors.isEmpty()) {
                 return errors.getFirst();
             }
         } catch (JsonProcessingException ignored) {
-            // fallback to raw payload
+            return payload;
         }
         return payload;
     }

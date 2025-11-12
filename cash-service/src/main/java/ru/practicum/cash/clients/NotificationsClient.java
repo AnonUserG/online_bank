@@ -1,7 +1,6 @@
 package ru.practicum.cash.clients;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
@@ -14,10 +13,12 @@ import java.math.BigDecimal;
 import java.time.Duration;
 import java.util.Map;
 
+/**
+ * HTTP-клиент сервиса уведомлений.
+ */
 @Component
+@Slf4j
 public class NotificationsClient {
-
-    private static final Logger log = LoggerFactory.getLogger(NotificationsClient.class);
 
     private final RestClient restClient;
     private final boolean enabled;

@@ -1,6 +1,8 @@
 package ru.practicum.accounts.account.web;
 
 import jakarta.validation.Valid;
+import java.util.List;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,17 +18,16 @@ import ru.practicum.accounts.account.web.dto.ChangePasswordRequest;
 import ru.practicum.accounts.account.web.dto.RegisterAccountRequest;
 import ru.practicum.accounts.account.web.dto.UpdateAccountRequest;
 
-import java.util.List;
-
+/**
+ * REST endpoints for public account operations.
+ * All endpoints require a Bearer token.
+ */
 @RestController
 @RequestMapping("/api/accounts")
+@RequiredArgsConstructor
 public class AccountController {
 
     private final AccountService accountService;
-
-    public AccountController(AccountService accountService) {
-        this.accountService = accountService;
-    }
 
     @GetMapping("/users")
     public List<AccountDto> listUsers() {

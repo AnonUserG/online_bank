@@ -9,6 +9,9 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.web.SecurityFilterChain;
 
+/**
+ * Resource-server security configuration.
+ */
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
@@ -37,3 +40,6 @@ public class SecurityConfig {
         return converter;
     }
 }
+
+
+

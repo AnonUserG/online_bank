@@ -1,25 +1,29 @@
 package ru.practicum.notifications.service;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import ru.practicum.notifications.mapper.NotificationMapper;
+import ru.practicum.notifications.model.NotificationMessage;
 import ru.practicum.notifications.web.dto.NotificationEventRequest;
 
-import java.time.OffsetDateTime;
-import java.util.UUID;
-
+/**
+ * Бизнес-логика обработки уведомлений.
+ */
 @Service
+@RequiredArgsConstructor
+@Slf4j
 public class NotificationService {
 
-    private static final Logger log = LoggerFactory.getLogger(NotificationService.class);
+    private final NotificationMapper notificationMapper;
 
     public void accept(NotificationEventRequest request) {
+        NotificationMessage message = notificationMapper.toMessage(request);
         log.info("Notification event id={} type={} recipient={} message={}",
-                UUID.randomUUID(),
-                request.type(),
-                request.recipient(),
-                request.message());
-
-        log.debug("Notification processed at {}", OffsetDateTime.now());
+                message.getId(),
+                message.getType(),
+                message.getRecipient(),
+                message.getMessage());
+        log.debug("Notification processed at {}", message.getCreatedAt());
     }
 }

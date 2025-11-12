@@ -1,7 +1,6 @@
 package ru.practicum.accounts.clients;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
@@ -12,10 +11,12 @@ import org.springframework.web.client.RestClientException;
 import java.time.Duration;
 import java.util.Map;
 
+/**
+ * HTTP client of the notifications service.
+ */
 @Component
+@Slf4j
 public class NotificationsClient {
-
-    private static final Logger log = LoggerFactory.getLogger(NotificationsClient.class);
 
     private final RestClient restClient;
     private final boolean enabled;
@@ -33,19 +34,19 @@ public class NotificationsClient {
     }
 
     public void sendRegistrationCompleted(String login) {
-        send("ACCOUNT_REGISTERED", login, "Регистрация аккаунта завершена");
+        send("ACCOUNT_REGISTERED", login, "Registration completed");
     }
 
     public void sendProfileUpdated(String login) {
-        send("ACCOUNT_UPDATED", login, "Профиль успешно обновлен");
+        send("ACCOUNT_UPDATED", login, "Profile updated");
     }
 
     public void sendPasswordChanged(String login) {
-        send("PASSWORD_CHANGED", login, "Пароль обновлен");
+        send("PASSWORD_CHANGED", login, "Password changed");
     }
 
     public void sendAccountDeleted(String login) {
-        send("ACCOUNT_DELETED", login, "Аккаунт удален");
+        send("ACCOUNT_DELETED", login, "Account deleted");
     }
 
     private void send(String type, String login, String message) {
@@ -68,4 +69,6 @@ public class NotificationsClient {
         }
     }
 }
+
+
 

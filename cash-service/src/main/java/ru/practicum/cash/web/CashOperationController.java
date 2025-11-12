@@ -1,6 +1,7 @@
 package ru.practicum.cash.web;
 
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -11,15 +12,15 @@ import ru.practicum.cash.web.dto.CashOperationRequest;
 
 import java.util.List;
 
+/**
+ * REST-ручки операций с наличными.
+ */
 @RestController
 @RequestMapping("/api/cash")
+@RequiredArgsConstructor
 public class CashOperationController {
 
     private final CashOperationService cashOperationService;
-
-    public CashOperationController(CashOperationService cashOperationService) {
-        this.cashOperationService = cashOperationService;
-    }
 
     @PostMapping("/operations")
     public ResponseEntity<List<String>> operate(@RequestBody @Valid CashOperationRequest request) {

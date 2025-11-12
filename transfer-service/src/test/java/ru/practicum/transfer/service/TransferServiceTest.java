@@ -7,6 +7,8 @@ import ru.practicum.transfer.clients.AccountsClient;
 import ru.practicum.transfer.clients.NotificationsClient;
 import ru.practicum.transfer.clients.dto.AccountDetails;
 import ru.practicum.transfer.clients.dto.BalanceAdjustmentCommand;
+import ru.practicum.transfer.mapper.TransferMapper;
+import ru.practicum.transfer.mapper.TransferMapperImpl;
 import ru.practicum.transfer.model.OperationType;
 import ru.practicum.transfer.model.TransferEntity;
 import ru.practicum.transfer.model.TransferStatus;
@@ -14,7 +16,6 @@ import ru.practicum.transfer.repository.TransferRepository;
 import ru.practicum.transfer.web.dto.TransferRequest;
 
 import java.math.BigDecimal;
-import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -33,7 +34,8 @@ class TransferServiceTest {
         repository = mock(TransferRepository.class);
         accountsClient = mock(AccountsClient.class);
         notificationsClient = mock(NotificationsClient.class);
-        service = new TransferService(repository, accountsClient, notificationsClient);
+        TransferMapper mapper = new TransferMapperImpl();
+        service = new TransferService(repository, accountsClient, notificationsClient, mapper);
 
         when(repository.save(any(TransferEntity.class))).thenAnswer(inv -> inv.getArgument(0));
     }

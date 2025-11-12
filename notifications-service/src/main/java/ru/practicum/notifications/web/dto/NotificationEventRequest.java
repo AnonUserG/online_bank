@@ -2,6 +2,9 @@ package ru.practicum.notifications.web.dto;
 
 import jakarta.validation.constraints.NotBlank;
 
+/**
+ * Входящее событие для уведомления.
+ */
 public record NotificationEventRequest(
         @NotBlank(message = "type is required")
         String type,

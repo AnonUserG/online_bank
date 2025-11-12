@@ -6,6 +6,9 @@ import jakarta.validation.constraints.NotNull;
 
 import java.math.BigDecimal;
 
+/**
+ * Запрос на пополнение или снятие средств.
+ */
 public record CashOperationRequest(
         @NotBlank(message = "login is required")
         String login,

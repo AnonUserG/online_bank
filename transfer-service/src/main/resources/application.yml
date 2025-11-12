@@ -1,5 +1,5 @@
 server:
-  port: 8085
+  port: ${SERVER_PORT:8085}
 
 spring:
   application:
@@ -20,8 +20,8 @@ spring:
     open-in-view: false
   cloud:
     consul:
-      host: ${CONSUL_HOST:consul}
-      port: ${CONSUL_PORT:8500}
+      host: ${SPRING_CLOUD_CONSUL_HOST:consul}
+      port: ${SPRING_CLOUD_CONSUL_PORT:8500}
       discovery:
         health-check-path: /actuator/health
         health-check-interval: 10s

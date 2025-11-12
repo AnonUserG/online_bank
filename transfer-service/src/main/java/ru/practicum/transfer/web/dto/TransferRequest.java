@@ -8,6 +8,9 @@ import jakarta.validation.constraints.NotNull;
 
 import java.math.BigDecimal;
 
+/**
+ * Запрос на перевод между пользователями.
+ */
 public record TransferRequest(
         @JsonProperty("from_login")
         @JsonAlias("fromLogin")

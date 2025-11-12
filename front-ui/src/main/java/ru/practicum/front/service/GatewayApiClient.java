@@ -1,12 +1,13 @@
 package ru.practicum.front.service;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
+import ru.practicum.front.service.dto.AccountResponse;
 
 import java.time.LocalDate;
 import java.util.Collections;
@@ -14,10 +15,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
+/**
+ * HTTP-клиент, который ходит в gateway.
+ */
 @Component
+@Slf4j
 public class GatewayApiClient {
-
-    private static final Logger log = LoggerFactory.getLogger(GatewayApiClient.class);
 
     private final RestClient client;
 
@@ -25,35 +28,29 @@ public class GatewayApiClient {
         this.client = RestClient.builder().baseUrl(gatewayBaseUrl).build();
     }
 
-    // ============== Accounts ==============
-
-    public Map<String, Object> getUserProfile(String login, String bearer) {
+    public AccountResponse getUserProfile(String login, String bearer) {
         return safeCall(
                 () -> client.get()
                         .uri("/api/accounts/users/{login}", login)
                         .header("Authorization", "Bearer " + bearer)
                         .retrieve()
-                        .body(Map.class),
-                Map.of(
-                        "login", login,
-                        "name", login,
-                        "birthdate", LocalDate.now().minusYears(18).toString(),
-                        "status", "stub",
-                        "message", "Сервис аккаунтов недоступен"
-                ),
+                        .body(AccountResponse.class),
+                new AccountResponse(login, login, LocalDate.now().minusYears(18)),
                 "getUserProfile"
         );
     }
 
-    @SuppressWarnings("unchecked")
-    public List<Map<String, Object>> getAllUsers(String bearer) {
+    public List<AccountResponse> getAllUsers(String bearer) {
         return safeCall(
-                () -> client.get()
-                        .uri("/api/accounts/users")
-                        .header("Authorization", "Bearer " + bearer)
-                        .retrieve()
-                        .body(List.class),
-                Collections.emptyList(),
+                () -> {
+                    AccountResponse[] response = client.get()
+                            .uri("/api/accounts/users")
+                            .header("Authorization", "Bearer " + bearer)
+                            .retrieve()
+                            .body(AccountResponse[].class);
+                    return response == null ? List.of() : List.of(response);
+                },
+                List.of(),
                 "getAllUsers"
         );
     }
@@ -68,7 +65,7 @@ public class GatewayApiClient {
                         .body(payload)
                         .retrieve()
                         .body(List.class),
-                List.of("Сервис аккаунтов временно недоступен. Попробуйте позже."),
+                List.of("Не удалось изменить пароль. Попробуйте позже."),
                 "changePassword"
         );
     }
@@ -83,7 +80,7 @@ public class GatewayApiClient {
                         .body(payload)
                         .retrieve()
                         .body(List.class),
-                List.of("Сервис аккаунтов временно недоступен. Попробуйте позже."),
+                List.of("Не удалось обновить профиль. Попробуйте позже."),
                 "updateProfile"
         );
     }
@@ -97,12 +94,10 @@ public class GatewayApiClient {
                         .body(payload)
                         .retrieve()
                         .body(List.class),
-                List.of("Регистрация временно недоступна. Повторите попытку позже."),
+                List.of("Регистрация временно недоступна. Попробуйте позже."),
                 "register"
         );
     }
-
-    // ============== Cash ==============
 
     public List<String> cash(String login, String action, String amount, String bearer) {
         var payload = Map.of("login", login, "action", action, "value", amount);
@@ -114,12 +109,10 @@ public class GatewayApiClient {
                         .body(payload)
                         .retrieve()
                         .body(List.class),
-                List.of("Сервис пополнения и снятия недоступен. Попробуйте позже."),
+                List.of("Операции с наличными сейчас недоступны."),
                 "cash"
         );
     }
-
-    // ============== Transfer ==============
 
     public List<String> transfer(String fromLogin, String toLogin, String amount, String bearer) {
         var payload = Map.of("from_login", fromLogin, "to_login", toLogin, "value", amount);
@@ -131,7 +124,7 @@ public class GatewayApiClient {
                         .body(payload)
                         .retrieve()
                         .body(List.class),
-                List.of("Сервис переводов недоступен. Попробуйте позже."),
+                List.of("Переводы временно недоступны."),
                 "transfer"
         );
     }

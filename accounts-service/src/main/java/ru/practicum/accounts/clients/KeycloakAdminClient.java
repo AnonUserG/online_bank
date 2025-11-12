@@ -1,8 +1,7 @@
 package ru.practicum.accounts.clients;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -17,10 +16,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * HTTP client that works with Keycloak Admin API.
+ */
 @Component
+@Slf4j
 public class KeycloakAdminClient {
-
-    private static final Logger log = LoggerFactory.getLogger(KeycloakAdminClient.class);
 
     private final RestClient restClient;
     private final String realm;
@@ -53,13 +54,12 @@ public class KeycloakAdminClient {
                 String path = response.getHeaders().getLocation().getPath();
                 return path.substring(path.lastIndexOf('/') + 1);
             }
-
             return findUserId(username, token);
         } catch (RestClientResponseException ex) {
             if (ex.getStatusCode().value() == 409) {
-                throw new IllegalStateException("Пользователь уже существует в Keycloak");
+                throw new IllegalStateException("Keycloak user already exists");
             }
-            throw new IllegalStateException("Ошибка Keycloak: " + ex.getMessage(), ex);
+            throw new IllegalStateException("Keycloak call failed: " + ex.getMessage(), ex);
         }
     }
 
@@ -79,7 +79,7 @@ public class KeycloakAdminClient {
                     .retrieve()
                     .toBodilessEntity();
         } catch (RestClientException ex) {
-            throw new IllegalStateException("Не удалось обновить пароль в Keycloak", ex);
+            throw new IllegalStateException("Unable to reset password in Keycloak", ex);
         }
     }
 
@@ -93,7 +93,7 @@ public class KeycloakAdminClient {
                     .retrieve()
                     .toBodilessEntity();
         } catch (RestClientException ex) {
-            throw new IllegalStateException("Не удалось удалить пользователя в Keycloak", ex);
+            throw new IllegalStateException("Unable to delete user in Keycloak", ex);
         }
     }
 
@@ -112,7 +112,7 @@ public class KeycloakAdminClient {
                 .body(TokenResponse.class);
 
         if (tokenResponse == null || tokenResponse.accessToken == null) {
-            throw new IllegalStateException("Не удалось получить admin токен Keycloak");
+            throw new IllegalStateException("Keycloak admin token is missing");
         }
         return tokenResponse.accessToken;
     }
@@ -130,20 +130,17 @@ public class KeycloakAdminClient {
                     .body(List.class);
 
             if (body == null || body.isEmpty()) {
-                throw new IllegalStateException("Пользователь не найден в Keycloak");
+                throw new IllegalStateException("Keycloak user not found");
             }
             Object id = body.get(0).get("id");
             if (id == null) {
-                throw new IllegalStateException("Некорректный ответ Keycloak");
+                throw new IllegalStateException("Keycloak user id missing");
             }
             return id.toString();
         } catch (RestClientException ex) {
             log.error("Keycloak lookup error: {}", ex.getMessage());
-            throw new IllegalStateException("Не удалось получить пользователя в Keycloak", ex);
+            throw new IllegalStateException("Unable to query Keycloak users", ex);
         }
-    }
-
-    private record TokenResponse(@JsonProperty("access_token") String accessToken) {
     }
 
     private Map<String, Object> buildCreateUserPayload(String username, String password, String name, String email) {
@@ -161,4 +158,10 @@ public class KeycloakAdminClient {
         )));
         return payload;
     }
+
+    private record TokenResponse(@JsonProperty("access_token") String accessToken) {
+    }
 }
+
+
+

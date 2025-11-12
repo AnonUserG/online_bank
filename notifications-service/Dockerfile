@@ -1,10 +1,11 @@
 FROM eclipse-temurin:21-jre-alpine
 
-ENV APP_HOME=/app
-WORKDIR ${APP_HOME}
+WORKDIR /app
 
 COPY target/*.jar app.jar
 
+ENV JAVA_OPTS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
+
 EXPOSE 8084
 
-ENTRYPOINT ["java","-jar","/app/app.jar"]
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]

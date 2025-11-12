@@ -1,7 +1,6 @@
 package ru.practicum.transfer.clients;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.http.client.SimpleClientHttpRequestFactory;
@@ -13,10 +12,12 @@ import java.math.BigDecimal;
 import java.time.Duration;
 import java.util.Map;
 
+/**
+ * HTTP-клиент сервиса уведомлений.
+ */
 @Component
+@Slf4j
 public class NotificationsClient {
-
-    private static final Logger log = LoggerFactory.getLogger(NotificationsClient.class);
 
     private final RestClient restClient;
     private final boolean enabled;
@@ -34,11 +35,13 @@ public class NotificationsClient {
     }
 
     public void sendTransferOut(String login, String receiver, BigDecimal amount, String currency) {
-        send(login, "TRANSFER_OUT", "Вы перевели %s %s пользователю %s".formatted(amount, currency, receiver));
+        send(login, "TRANSFER_OUT",
+                "Вы перевели %s %s пользователю %s".formatted(amount, currency, receiver));
     }
 
     public void sendTransferIn(String login, String sender, BigDecimal amount, String currency) {
-        send(login, "TRANSFER_IN", "На ваш счёт поступило %s %s от %s".formatted(amount, currency, sender));
+        send(login, "TRANSFER_IN",
+                "На ваш счёт поступило %s %s от %s".formatted(amount, currency, sender));
     }
 
     private void send(String login, String type, String message) {

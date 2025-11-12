@@ -1,47 +1,34 @@
 package ru.practicum.accounts.account.service;
 
-import org.springframework.stereotype.Component;
+import java.math.BigDecimal;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.Named;
 import ru.practicum.accounts.account.model.AccountEntity;
-import ru.practicum.accounts.account.model.BankAccountEntity;
 import ru.practicum.accounts.account.web.dto.AccountDetailsDto;
 import ru.practicum.accounts.account.web.dto.AccountDto;
 
-import java.math.BigDecimal;
-import java.util.UUID;
+/**
+ * Maps account entities to DTOs.
+ */
+@Mapper(componentModel = "spring")
+public interface AccountMapper {
 
-@Component
-public class AccountMapper {
+    @Mapping(target = "accountNumber", source = "bankAccount.accountNumber")
+    @Mapping(target = "currency", source = "bankAccount.currency")
+    @Mapping(target = "balance", source = "bankAccount.balance", qualifiedByName = "balanceOrZero")
+    AccountDto toDto(AccountEntity entity);
 
-    public AccountDto toDto(AccountEntity entity) {
-        BankAccountEntity bank = entity.getBankAccount();
-        BigDecimal balance = bank != null ? bank.getBalance() : BigDecimal.ZERO;
-        String accountNumber = bank != null ? bank.getAccountNumber() : null;
-        String currency = bank != null ? bank.getCurrency() : null;
+    @Mapping(target = "userId", source = "id")
+    @Mapping(target = "bankAccountId", source = "bankAccount.id")
+    @Mapping(target = "accountNumber", source = "bankAccount.accountNumber")
+    @Mapping(target = "currency", source = "bankAccount.currency")
+    @Mapping(target = "balance", source = "bankAccount.balance", qualifiedByName = "balanceOrZero")
+    AccountDetailsDto toDetailsDto(AccountEntity entity);
 
-        return new AccountDto(
-                entity.getLogin(),
-                entity.getName(),
-                entity.getBirthdate(),
-                accountNumber,
-                currency,
-                balance
-        );
-    }
-
-    public AccountDetailsDto toDetailsDto(AccountEntity entity) {
-        BankAccountEntity bank = entity.getBankAccount();
-        UUID bankAccountId = bank != null ? bank.getId() : null;
-        String accountNumber = bank != null ? bank.getAccountNumber() : null;
-        String currency = bank != null ? bank.getCurrency() : null;
-        BigDecimal balance = bank != null ? bank.getBalance() : BigDecimal.ZERO;
-
-        return new AccountDetailsDto(
-                entity.getId(),
-                bankAccountId,
-                entity.getLogin(),
-                accountNumber,
-                currency,
-                balance
-        );
+    @Named("balanceOrZero")
+    default BigDecimal balanceOrZero(BigDecimal value) {
+        return value == null ? BigDecimal.ZERO : value;
     }
 }
+

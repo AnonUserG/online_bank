@@ -1,6 +1,10 @@
 package ru.practicum.accounts.account.web;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,23 +13,17 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
-
 import ru.practicum.accounts.account.model.AccountEntity;
 import ru.practicum.accounts.account.model.BankAccountEntity;
 import ru.practicum.accounts.account.repository.AccountRepository;
 import ru.practicum.accounts.clients.KeycloakAdminClient;
 import ru.practicum.accounts.clients.NotificationsClient;
-
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicLong;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
@@ -94,7 +92,7 @@ class AccountControllerIT {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(payload)))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$[0]").value("Возраст должен быть не меньше 18 лет"));
+                .andExpect(jsonPath("$[0]").value("user must be at least 18 years old"));
     }
 
     @Test
@@ -103,7 +101,7 @@ class AccountControllerIT {
 
         mockMvc.perform(delete("/api/accounts/users/{login}", "rich-user"))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$[0]").value(containsString("Нельзя удалить аккаунт")));
+                .andExpect(jsonPath("$[0]").value(containsString("Account contains funds and cannot be removed")));
 
         verify(keycloakAdminClient, never()).deleteUser("rich-user");
     }

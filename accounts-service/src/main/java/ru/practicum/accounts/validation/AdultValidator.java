@@ -2,12 +2,11 @@ package ru.practicum.accounts.validation;
 
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
-
 import java.time.Clock;
 import java.time.LocalDate;
 
 /**
- * Проверяет, что дата рождения указывает на возраст не младше заданного количества лет.
+ * Validator that enforces the minimal age rule.
  */
 public class AdultValidator implements ConstraintValidator<Adult, LocalDate> {
 
@@ -36,3 +35,4 @@ public class AdultValidator implements ConstraintValidator<Adult, LocalDate> {
         return !value.isAfter(threshold);
     }
 }
+

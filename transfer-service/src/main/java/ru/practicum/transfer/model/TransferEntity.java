@@ -10,12 +10,21 @@ import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 import org.hibernate.annotations.GenericGenerator;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
+/**
+ * Трансфер средств между счетами.
+ */
+@Data
+@NoArgsConstructor
+@EqualsAndHashCode(of = "id")
 @Entity
 @Table(name = "transactions", schema = "transfer")
 public class TransferEntity {
@@ -63,57 +72,5 @@ public class TransferEntity {
     @PreUpdate
     void preUpdate() {
         this.updatedAt = OffsetDateTime.now();
-    }
-
-    public UUID getId() {
-        return id;
-    }
-
-    public UUID getFromAccountId() {
-        return fromAccountId;
-    }
-
-    public void setFromAccountId(UUID fromAccountId) {
-        this.fromAccountId = fromAccountId;
-    }
-
-    public UUID getToAccountId() {
-        return toAccountId;
-    }
-
-    public void setToAccountId(UUID toAccountId) {
-        this.toAccountId = toAccountId;
-    }
-
-    public BigDecimal getAmount() {
-        return amount;
-    }
-
-    public void setAmount(BigDecimal amount) {
-        this.amount = amount;
-    }
-
-    public String getCurrency() {
-        return currency;
-    }
-
-    public void setCurrency(String currency) {
-        this.currency = currency;
-    }
-
-    public TransferStatus getStatus() {
-        return status;
-    }
-
-    public void setStatus(TransferStatus status) {
-        this.status = status;
-    }
-
-    public String getIdempotencyKey() {
-        return idempotencyKey;
-    }
-
-    public void setIdempotencyKey(String idempotencyKey) {
-        this.idempotencyKey = idempotencyKey;
     }
 }

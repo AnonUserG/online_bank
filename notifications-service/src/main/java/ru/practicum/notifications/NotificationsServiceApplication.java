@@ -3,6 +3,9 @@ package ru.practicum.notifications;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
+/**
+ * Точка входа notifications-service.
+ */
 @SpringBootApplication
 public class NotificationsServiceApplication {
 

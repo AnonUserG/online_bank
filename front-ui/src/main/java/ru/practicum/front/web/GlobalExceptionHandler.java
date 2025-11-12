@@ -7,10 +7,13 @@ import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+/**
+ * Обработчик глобальных ошибок UI.
+ */
 @ControllerAdvice(annotations = Controller.class)
 public class GlobalExceptionHandler {
 
-    private static final String SESSION_EXPIRED_MESSAGE = "Сессия устарела, выполните вход повторно.";
+    private static final String SESSION_EXPIRED_MESSAGE = "Сессия истекла. Авторизуйтесь повторно.";
 
     @ExceptionHandler({ClientAuthorizationException.class, OAuth2AuthorizationException.class})
     public String handleAuthorizationExceptions(RedirectAttributes redirectAttributes) {

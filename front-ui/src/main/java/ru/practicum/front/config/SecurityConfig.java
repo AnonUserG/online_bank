@@ -10,6 +10,9 @@ import org.springframework.security.oauth2.client.userinfo.OAuth2UserService;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.security.web.SecurityFilterChain;
 
+/**
+ * Конфигурация Spring Security для фронта.
+ */
 @Configuration
 public class SecurityConfig {
 
@@ -27,7 +30,7 @@ public class SecurityConfig {
         http.csrf(csrf -> csrf.disable());
 
         var logoutHandler = new OidcClientInitiatedLogoutSuccessHandler(clientRegistrationRepository);
-        logoutHandler.setPostLogoutRedirectUri("/login");
+        logoutHandler.setPostLogoutRedirectUri("{baseUrl}/login");
         http.logout(logout -> logout.logoutSuccessHandler(logoutHandler));
 
         return http.build();
