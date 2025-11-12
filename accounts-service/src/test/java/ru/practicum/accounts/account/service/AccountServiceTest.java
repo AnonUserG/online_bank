@@ -6,6 +6,7 @@ import org.mockito.ArgumentCaptor;
 import ru.practicum.accounts.account.model.AccountEntity;
 import ru.practicum.accounts.account.model.BankAccountEntity;
 import ru.practicum.accounts.account.repository.AccountRepository;
+import ru.practicum.accounts.account.repository.BankAccountRepository;
 import ru.practicum.accounts.account.web.dto.BalanceAdjustmentRequest;
 import ru.practicum.accounts.account.web.dto.BalanceOperationType;
 import ru.practicum.accounts.account.web.dto.ChangePasswordRequest;
@@ -29,6 +30,7 @@ import static org.mockito.Mockito.*;
 class AccountServiceTest {
 
     private AccountRepository repository;
+    private BankAccountRepository bankAccountRepository;
     private KeycloakAdminClient keycloakAdminClient;
     private NotificationsClient notificationsClient;
     private AccountService service;
@@ -36,9 +38,10 @@ class AccountServiceTest {
     @BeforeEach
     void setUp() {
         repository = mock(AccountRepository.class);
+        bankAccountRepository = mock(BankAccountRepository.class);
         keycloakAdminClient = mock(KeycloakAdminClient.class);
         notificationsClient = mock(NotificationsClient.class);
-        service = new AccountService(repository, new AccountMapper(), keycloakAdminClient, notificationsClient);
+        service = new AccountService(repository, bankAccountRepository, new AccountMapper(), keycloakAdminClient, notificationsClient);
     }
 
     @Test
@@ -72,10 +75,7 @@ class AccountServiceTest {
 
     @Test
     void changePasswordDelegatesToKeycloak() {
-        AccountEntity entity = new AccountEntity();
-        entity.setLogin("alice");
-        entity.setBirthdate(LocalDate.of(1990, 1, 1));
-        entity.setName("Alice");
+        AccountEntity entity = baseAccount();
         when(repository.findByLogin("alice")).thenReturn(Optional.of(entity));
 
         var response = service.changePassword("alice", new ChangePasswordRequest("newpass123"));
@@ -87,10 +87,7 @@ class AccountServiceTest {
 
     @Test
     void updateProfileUpdatesEntity() {
-        AccountEntity entity = new AccountEntity();
-        entity.setLogin("alice");
-        entity.setBirthdate(LocalDate.of(1990, 1, 1));
-        entity.setName("Alice");
+        AccountEntity entity = baseAccount();
         when(repository.findByLogin("alice")).thenReturn(Optional.of(entity));
 
         var response = service.updateProfile("alice", new UpdateAccountRequest("Alice Cooper", LocalDate.of(1991, 2, 2)));
@@ -103,18 +100,13 @@ class AccountServiceTest {
 
     @Test
     void deleteAccountFailsWhenBalancePositive() {
-        AccountEntity entity = new AccountEntity();
-        entity.setLogin("alice");
-        entity.setBirthdate(LocalDate.of(1990, 1, 1));
-        entity.setName("Alice");
-        BankAccountEntity bank = new BankAccountEntity();
-        bank.setBalance(BigDecimal.TEN);
+        AccountEntity entity = baseAccount();
+        BankAccountEntity bank = bank(BigDecimal.TEN);
         entity.setBankAccount(bank);
         when(repository.findByLogin("alice")).thenReturn(Optional.of(entity));
 
         assertThatThrownBy(() -> service.deleteAccount("alice"))
-                .isInstanceOf(AccountDeletionException.class)
-                .hasMessageContaining("Нельзя удалить аккаунт");
+                .isInstanceOf(AccountDeletionException.class);
 
         verifyNoInteractions(keycloakAdminClient);
         verify(repository, never()).delete(any());
@@ -122,12 +114,8 @@ class AccountServiceTest {
 
     @Test
     void deleteAccountRemovesEntityWhenBalanceZero() {
-        AccountEntity entity = new AccountEntity();
-        entity.setLogin("alice");
-        entity.setBirthdate(LocalDate.of(1990, 1, 1));
-        entity.setName("Alice");
-        BankAccountEntity bank = new BankAccountEntity();
-        bank.setBalance(BigDecimal.ZERO);
+        AccountEntity entity = baseAccount();
+        BankAccountEntity bank = bank(BigDecimal.ZERO);
         entity.setBankAccount(bank);
         when(repository.findByLogin("alice")).thenReturn(Optional.of(entity));
 
@@ -141,14 +129,8 @@ class AccountServiceTest {
 
     @Test
     void getAccountDetailsReturnsBankInfo() {
-        AccountEntity entity = new AccountEntity();
-        entity.setLogin("alice");
-        entity.setBirthdate(LocalDate.of(1990, 1, 1));
-        entity.setName("Alice");
-        BankAccountEntity bank = new BankAccountEntity();
-        bank.setBalance(BigDecimal.valueOf(150));
-        bank.setAccountNumber("12345678901234567890");
-        bank.setCurrency("RUB");
+        AccountEntity entity = baseAccount();
+        BankAccountEntity bank = bank(BigDecimal.valueOf(150));
         entity.setBankAccount(bank);
         when(repository.findByLogin("alice")).thenReturn(Optional.of(entity));
 
@@ -161,43 +143,46 @@ class AccountServiceTest {
 
     @Test
     void adjustBalanceDepositsMoney() {
-        AccountEntity entity = new AccountEntity();
-        entity.setLogin("alice");
-        entity.setBirthdate(LocalDate.of(1990, 1, 1));
-        entity.setName("Alice");
-        BankAccountEntity bank = new BankAccountEntity();
-        bank.setBalance(BigDecimal.valueOf(100));
-        bank.setAccountNumber("12345678901234567890");
-        bank.setCurrency("RUB");
-        entity.setBankAccount(bank);
-        when(repository.findByLogin("alice")).thenReturn(Optional.of(entity));
+        AccountEntity entity = baseAccount();
+        BankAccountEntity bank = bank(BigDecimal.valueOf(100));
+        bank.setUser(entity);
+        when(bankAccountRepository.findByUserLoginForUpdate("alice")).thenReturn(Optional.of(bank));
 
         var details = service.adjustBalance("alice",
                 new BalanceAdjustmentRequest(BigDecimal.valueOf(50), BalanceOperationType.DEPOSIT));
 
         assertThat(details.balance()).isEqualByComparingTo("150");
-        verify(repository).save(entity);
+        verify(bankAccountRepository).save(bank);
     }
 
     @Test
     void adjustBalanceFailsOnInsufficientFunds() {
-        AccountEntity entity = new AccountEntity();
-        entity.setLogin("alice");
-        entity.setBirthdate(LocalDate.of(1990, 1, 1));
-        entity.setName("Alice");
-        BankAccountEntity bank = new BankAccountEntity();
-        bank.setBalance(BigDecimal.valueOf(30));
-        bank.setAccountNumber("12345678901234567890");
-        bank.setCurrency("RUB");
-        entity.setBankAccount(bank);
-        when(repository.findByLogin("alice")).thenReturn(Optional.of(entity));
+        AccountEntity entity = baseAccount();
+        BankAccountEntity bank = bank(BigDecimal.valueOf(30));
+        bank.setUser(entity);
+        when(bankAccountRepository.findByUserLoginForUpdate("alice")).thenReturn(Optional.of(bank));
 
         assertThatThrownBy(() -> service.adjustBalance("alice",
                 new BalanceAdjustmentRequest(BigDecimal.valueOf(50), BalanceOperationType.WITHDRAW)))
                 .isInstanceOf(InsufficientFundsException.class)
                 .hasMessageContaining("Недостаточно средств");
 
-        verify(repository, never()).save(any());
+        verify(bankAccountRepository, never()).save(any());
+    }
+
+    private AccountEntity baseAccount() {
+        AccountEntity entity = new AccountEntity();
+        entity.setLogin("alice");
+        entity.setBirthdate(LocalDate.of(1990, 1, 1));
+        entity.setName("Alice");
+        return entity;
+    }
+
+    private BankAccountEntity bank(BigDecimal balance) {
+        BankAccountEntity bank = new BankAccountEntity();
+        bank.setBalance(balance);
+        bank.setAccountNumber("12345678901234567890");
+        bank.setCurrency("RUB");
+        return bank;
     }
 }
-

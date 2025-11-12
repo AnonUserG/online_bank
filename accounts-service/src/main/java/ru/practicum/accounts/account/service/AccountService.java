@@ -5,6 +5,7 @@ import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.accounts.account.model.AccountEntity;
 import ru.practicum.accounts.account.model.BankAccountEntity;
 import ru.practicum.accounts.account.repository.AccountRepository;
+import ru.practicum.accounts.account.repository.BankAccountRepository;
 import ru.practicum.accounts.account.web.dto.AccountDetailsDto;
 import ru.practicum.accounts.account.web.dto.AccountDto;
 import ru.practicum.accounts.account.web.dto.BalanceAdjustmentRequest;
@@ -28,16 +29,19 @@ import java.util.Locale;
 public class AccountService {
 
     private final AccountRepository repository;
+    private final BankAccountRepository bankAccountRepository;
     private final AccountMapper mapper;
     private final KeycloakAdminClient keycloakAdminClient;
     private final NotificationsClient notificationsClient;
     private final SecureRandom random = new SecureRandom();
 
     public AccountService(AccountRepository repository,
+                          BankAccountRepository bankAccountRepository,
                           AccountMapper mapper,
                           KeycloakAdminClient keycloakAdminClient,
                           NotificationsClient notificationsClient) {
         this.repository = repository;
+        this.bankAccountRepository = bankAccountRepository;
         this.mapper = mapper;
         this.keycloakAdminClient = keycloakAdminClient;
         this.notificationsClient = notificationsClient;
@@ -131,12 +135,9 @@ public class AccountService {
 
     @Transactional
     public AccountDetailsDto adjustBalance(String login, BalanceAdjustmentRequest request) {
-        var entity = repository.findByLogin(login)
+        var bank = bankAccountRepository.findByUserLoginForUpdate(login)
                 .orElseThrow(() -> new AccountNotFoundException("User '%s' not found".formatted(login)));
-        var bank = entity.getBankAccount();
-        if (bank == null) {
-            throw new AccountNotFoundException("Bank account not found for user '%s'".formatted(login));
-        }
+        var entity = bank.getUser();
 
         var amount = request.amount();
         if (request.type() == BalanceOperationType.DEPOSIT) {
@@ -148,7 +149,8 @@ public class AccountService {
             bank.setBalance(bank.getBalance().subtract(amount));
         }
 
-        repository.save(entity);
+        bankAccountRepository.save(bank);
+        entity.setBankAccount(bank);
         return mapper.toDetailsDto(entity);
     }
 

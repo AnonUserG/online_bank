@@ -13,6 +13,7 @@ import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestClientResponseException;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -39,21 +40,12 @@ public class KeycloakAdminClient {
     public String createUser(String username, String password, String name, String email) {
         String token = adminToken();
         try {
+            Map<String, Object> payload = buildCreateUserPayload(username, password, name, email);
             var response = restClient.post()
                     .uri("/admin/realms/{realm}/users", realm)
                     .contentType(MediaType.APPLICATION_JSON)
                     .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
-                    .body(Map.of(
-                            "username", username,
-                            "enabled", true,
-                            "firstName", name,
-                            "email", email,
-                            "credentials", List.of(Map.of(
-                                    "type", "password",
-                                    "value", password,
-                                    "temporary", false
-                            ))
-                    ))
+                    .body(payload)
                     .retrieve()
                     .toBodilessEntity();
 
@@ -152,5 +144,21 @@ public class KeycloakAdminClient {
     }
 
     private record TokenResponse(@JsonProperty("access_token") String accessToken) {
+    }
+
+    private Map<String, Object> buildCreateUserPayload(String username, String password, String name, String email) {
+        var payload = new HashMap<String, Object>();
+        payload.put("username", username);
+        payload.put("enabled", true);
+        payload.put("firstName", name);
+        if (email != null && !email.isBlank()) {
+            payload.put("email", email);
+        }
+        payload.put("credentials", List.of(Map.of(
+                "type", "password",
+                "value", password,
+                "temporary", false
+        )));
+        return payload;
     }
 }
