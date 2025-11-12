@@ -96,5 +96,27 @@ services:
     networks:
       - bank-network
 
+  transfer-service:
+    build: ./transfer-service
+    container_name: bank-transfer-service
+    ports:
+      - "8085:8085"
+    environment:
+      SERVER_PORT: 8085
+      SPRING_CLOUD_CONSUL_HOST: consul
+      SPRING_CLOUD_CONSUL_PORT: 8500
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/bank
+      SPRING_DATASOURCE_USERNAME: bank
+      SPRING_DATASOURCE_PASSWORD: bank123
+      ACCOUNTS_BASE_URL: http://accounts-service:8082
+      NOTIFICATIONS_BASE_URL: http://notifications-service:8084
+    depends_on:
+      - postgres
+      - consul
+      - accounts-service
+      - notifications-service
+    networks:
+      - bank-network
+
 networks:
   bank-network:

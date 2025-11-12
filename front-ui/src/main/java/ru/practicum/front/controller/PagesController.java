@@ -13,6 +13,8 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import ru.practicum.front.service.GatewayApiClient;
 import ru.practicum.front.util.ValidationUtils;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
@@ -105,7 +107,7 @@ public class PagesController {
     @PostMapping("/user/{login}/editUserAccount")
     public String editUserAccount(@PathVariable("login") String pathLogin,
                                   @RequestParam("name") @NotBlank String name,
-                                  @RequestParam("birthdate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate birthdate,
+                                  @RequestParam(value = "birthdate", required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate birthdate,
                                   @RegisteredOAuth2AuthorizedClient("keycloak") OAuth2AuthorizedClient client,
                                   RedirectAttributes ra,
                                   @AuthenticationPrincipal OidcUser oidcUser) {
@@ -166,8 +168,15 @@ public class PagesController {
             return "redirect:/main";
         }
 
+        List<String> validationErrors = ValidationUtils.validateTransfer(toLogin, value);
+        if (!validationErrors.isEmpty()) {
+            ra.addFlashAttribute("transferOtherErrors", validationErrors);
+            return "redirect:/main";
+        }
+
         String bearer = client.getAccessToken().getTokenValue();
-        List<String> backendErrors = safeList(api.transfer(fromLogin, toLogin, value, bearer));
+        String normalizedValue = new BigDecimal(value.trim()).setScale(2, RoundingMode.HALF_UP).toPlainString();
+        List<String> backendErrors = safeList(api.transfer(fromLogin, toLogin, normalizedValue, bearer));
         ra.addFlashAttribute("transferOtherErrors", backendErrors.isEmpty() ? null : backendErrors);
         return "redirect:/main";
     }

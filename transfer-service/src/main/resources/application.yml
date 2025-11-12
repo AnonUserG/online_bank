@@ -1,8 +1,23 @@
+server:
+  port: 8085
+
 spring:
   application:
     name: transfer-service
   config:
     import: "optional:consul:"
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/bank}
+    username: ${SPRING_DATASOURCE_USERNAME:bank}
+    password: ${SPRING_DATASOURCE_PASSWORD:bank123}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        default_schema: transfer
+    open-in-view: false
   cloud:
     consul:
       host: ${CONSUL_HOST:consul}
