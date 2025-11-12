@@ -1,12 +1,27 @@
+server:
+  port: ${SERVER_PORT:8083}
+
 spring:
   application:
     name: cash-service
   config:
     import: "optional:consul:"
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/bank}
+    username: ${SPRING_DATASOURCE_USERNAME:bank}
+    password: ${SPRING_DATASOURCE_PASSWORD:bank123}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        default_schema: cash
+    open-in-view: false
   cloud:
     consul:
-      host: ${CONSUL_HOST:consul}
-      port: ${CONSUL_PORT:8500}
+      host: ${SPRING_CLOUD_CONSUL_HOST:consul}
+      port: ${SPRING_CLOUD_CONSUL_PORT:8500}
       discovery:
         health-check-path: /actuator/health
         health-check-interval: 10s

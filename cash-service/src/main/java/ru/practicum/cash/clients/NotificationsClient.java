@@ -1,0 +1,61 @@
+package ru.practicum.cash.clients;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.MediaType;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
+import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientException;
+import ru.practicum.cash.model.OperationType;
+
+import java.math.BigDecimal;
+import java.time.Duration;
+import java.util.Map;
+
+@Component
+public class NotificationsClient {
+
+    private static final Logger log = LoggerFactory.getLogger(NotificationsClient.class);
+
+    private final RestClient restClient;
+    private final boolean enabled;
+
+    public NotificationsClient(@Value("${notifications.base-url:http://notifications-service:8084}") String baseUrl,
+                               @Value("${notifications.enabled:true}") boolean enabled) {
+        var factory = new SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(Duration.ofMillis(500));
+        factory.setReadTimeout(Duration.ofMillis(1500));
+        this.restClient = RestClient.builder()
+                .requestFactory(factory)
+                .baseUrl(baseUrl)
+                .build();
+        this.enabled = enabled;
+    }
+
+    public void sendCashEvent(String login, OperationType type, BigDecimal amount, String currency) {
+        if (!enabled) {
+            return;
+        }
+        String message = switch (type) {
+            case DEPOSIT -> "На ваш счёт зачислено %s %s".formatted(amount, currency);
+            case WITHDRAW -> "Со счёта списано %s %s".formatted(amount, currency);
+        };
+        String eventType = type == OperationType.DEPOSIT ? "CASH_DEPOSIT" : "CASH_WITHDRAW";
+        try {
+            restClient.post()
+                    .uri("/api/notifications/events")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(Map.of(
+                            "type", eventType,
+                            "recipient", login,
+                            "message", message
+                    ))
+                    .retrieve()
+                    .toBodilessEntity();
+        } catch (RestClientException ex) {
+            log.warn("Notifications service unavailable: {}", ex.getMessage());
+        }
+    }
+}

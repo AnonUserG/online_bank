@@ -50,7 +50,7 @@ CREATE TABLE accounts.bank_accounts (
                                         created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
                                         updated_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
                                         CONSTRAINT fk_bank_accounts_user FOREIGN KEY (user_id)
-                                            REFERENCES accounts.users(id) ON DELETE CASCADE,
+                                        REFERENCES accounts.users(id) ON DELETE CASCADE,
                                         CONSTRAINT uq_bank_accounts_user UNIQUE (user_id),
                                         CONSTRAINT chk_balance_nonneg CHECK (balance >= 0),
                                         CONSTRAINT chk_currency3 CHECK (char_length(currency) = 3)

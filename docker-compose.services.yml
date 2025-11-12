@@ -50,8 +50,8 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/bank
       SPRING_DATASOURCE_USERNAME: bank
       SPRING_DATASOURCE_PASSWORD: bank123
-      CONSUL_HOST: consul
-      CONSUL_PORT: 8500
+      SPRING_CLOUD_CONSUL_HOST: consul
+      SPRING_CLOUD_CONSUL_PORT: 8500
       KEYCLOAK_BASE_URL: http://keycloak:8080
       KEYCLOAK_REALM: bank
       KEYCLOAK_ADMIN_USERNAME: admin
@@ -74,6 +74,24 @@ services:
       SPRING_CLOUD_CONSUL_HOST: consul
       SPRING_CLOUD_CONSUL_PORT: 8500
     depends_on:
+      - consul
+    networks:
+      - bank-network
+
+  cash-service:
+    build: ./cash-service
+    container_name: bank-cash-service
+    ports:
+      - "8083:8083"
+    environment:
+      SERVER_PORT: 8083
+      SPRING_CLOUD_CONSUL_HOST: consul
+      SPRING_CLOUD_CONSUL_PORT: 8500
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/bank
+      SPRING_DATASOURCE_USERNAME: bank
+      SPRING_DATASOURCE_PASSWORD: bank123
+    depends_on:
+      - postgres
       - consul
     networks:
       - bank-network
