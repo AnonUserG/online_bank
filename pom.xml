@@ -50,6 +50,7 @@
 		<module>notifications-service</module>
 		<module>exchange-generator-service</module>
 		<module>exchange-service</module>
+		<module>blocker-service</module>
 	</modules>
 
 	<dependencyManagement>

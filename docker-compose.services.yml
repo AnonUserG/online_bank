@@ -137,6 +137,21 @@ services:
     networks:
       - bank-network
 
+  blocker-service:
+    build: ./blocker-service
+    container_name: bank-blocker-service
+    ports:
+      - "8088:8088"
+    environment:
+      SERVER_PORT: 8088
+      SPRING_CLOUD_CONSUL_HOST: consul
+      SPRING_CLOUD_CONSUL_PORT: 8500
+      BLOCK_PROBABILITY: 0.3
+    depends_on:
+      - consul
+    networks:
+      - bank-network
+
   exchange-generator-service:
     build: ./exchange-generator-service
     container_name: bank-exchange-generator-service

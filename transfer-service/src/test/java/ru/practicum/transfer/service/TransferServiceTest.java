@@ -5,8 +5,10 @@ import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import ru.practicum.transfer.clients.AccountsClient;
 import ru.practicum.transfer.clients.NotificationsClient;
+import ru.practicum.transfer.clients.BlockerClient;
 import ru.practicum.transfer.clients.dto.AccountDetails;
 import ru.practicum.transfer.clients.dto.BalanceAdjustmentCommand;
+import ru.practicum.transfer.clients.dto.BlockCheckResponse;
 import ru.practicum.transfer.mapper.TransferMapper;
 import ru.practicum.transfer.mapper.TransferMapperImpl;
 import ru.practicum.transfer.model.OperationType;
@@ -27,6 +29,7 @@ class TransferServiceTest {
     private TransferRepository repository;
     private AccountsClient accountsClient;
     private NotificationsClient notificationsClient;
+    private BlockerClient blockerClient;
     private TransferService service;
 
     @BeforeEach
@@ -34,10 +37,12 @@ class TransferServiceTest {
         repository = mock(TransferRepository.class);
         accountsClient = mock(AccountsClient.class);
         notificationsClient = mock(NotificationsClient.class);
+        blockerClient = mock(BlockerClient.class);
         TransferMapper mapper = new TransferMapperImpl();
-        service = new TransferService(repository, accountsClient, notificationsClient, mapper);
+        service = new TransferService(repository, accountsClient, notificationsClient, blockerClient, mapper);
 
         when(repository.save(any(TransferEntity.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(blockerClient.check(any())).thenReturn(new BlockCheckResponse(true, null));
     }
 
     @Test
@@ -86,6 +91,16 @@ class TransferServiceTest {
         assertThat(result).isNotEmpty();
         verify(accountsClient, times(2)).adjustBalance(eq("alice"), any(BalanceAdjustmentCommand.class)); // withdraw + rollback
         verify(repository, atLeastOnce()).save(any(TransferEntity.class));
+    }
+
+    @Test
+    void blocksWhenBlockerDenies() {
+        when(blockerClient.check(any())).thenReturn(new BlockCheckResponse(false, "blocked"));
+
+        var result = service.process(new TransferRequest("alice", "bob", BigDecimal.valueOf(10)));
+
+        assertThat(result).contains("blocked");
+        verifyNoInteractions(accountsClient);
     }
 
     private AccountDetails details(String login, BigDecimal balance) {

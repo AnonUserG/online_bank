@@ -18,6 +18,8 @@ spring:
       hibernate:
         default_schema: transfer
     open-in-view: false
+app:
+  blocker-base-url: ${BLOCKER_BASE_URL:http://blocker-service:8088}
   cloud:
     consul:
       host: ${SPRING_CLOUD_CONSUL_HOST:consul}

@@ -1,0 +1,26 @@
+server:
+  port: ${SERVER_PORT:8088}
+
+spring:
+  application:
+    name: blocker-service
+  config:
+    import: "optional:consul:"
+  cloud:
+    consul:
+      host: ${SPRING_CLOUD_CONSUL_HOST:consul}
+      port: ${SPRING_CLOUD_CONSUL_PORT:8500}
+      discovery:
+        health-check-path: /actuator/health
+        health-check-interval: 10s
+        prefer-ip-address: true
+      config:
+        enabled: true
+        format: YAML
+        prefixes: ${CONSUL_PREFIXES:config}
+        default-context: application
+        data-key: data
+
+app:
+  blocker:
+    block-probability: ${BLOCK_PROBABILITY:0.3}

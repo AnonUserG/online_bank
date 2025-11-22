@@ -6,6 +6,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.transfer.clients.AccountsClient;
 import ru.practicum.transfer.clients.NotificationsClient;
+import ru.practicum.transfer.clients.BlockerClient;
+import ru.practicum.transfer.clients.dto.BlockCheckRequest;
 import ru.practicum.transfer.clients.dto.AccountDetails;
 import ru.practicum.transfer.clients.dto.BalanceAdjustmentCommand;
 import ru.practicum.transfer.mapper.TransferMapper;
@@ -32,6 +34,7 @@ public class TransferService {
     private final TransferRepository repository;
     private final AccountsClient accountsClient;
     private final NotificationsClient notificationsClient;
+    private final BlockerClient blockerClient;
     private final TransferMapper transferMapper;
 
     @Transactional
@@ -42,6 +45,16 @@ public class TransferService {
 
         TransferEntity entity = null;
         try {
+            var block = blockerClient.check(new BlockCheckRequest(
+                    request.fromLogin(),
+                    request.toLogin(),
+                    request.value() == null ? null : request.value().toPlainString(),
+                    request.value()
+            ));
+            if (block != null && !block.allowed()) {
+                return List.of(block.reason() == null ? "Ваш перевод заблокирован" : block.reason());
+            }
+
             AccountDetails fromAccount = accountsClient.getAccountDetails(request.fromLogin());
             AccountDetails toAccount = accountsClient.getAccountDetails(request.toLogin());
             if (fromAccount == null || toAccount == null) {
