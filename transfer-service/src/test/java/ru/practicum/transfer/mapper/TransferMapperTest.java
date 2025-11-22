@@ -6,7 +6,6 @@ import java.math.BigDecimal;
 import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mapstruct.factory.Mappers;
 import ru.practicum.transfer.model.TransferEntity;
 import ru.practicum.transfer.model.TransferStatus;
 import ru.practicum.transfer.service.dto.TransferPlan;
@@ -17,7 +16,7 @@ class TransferMapperTest {
 
     @BeforeEach
     void setUp() {
-        mapper = Mappers.getMapper(TransferMapper.class);
+        mapper = new TransferMapperImpl();
     }
 
     @Test

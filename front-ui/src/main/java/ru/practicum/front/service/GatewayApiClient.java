@@ -8,6 +8,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 import ru.practicum.front.service.dto.AccountResponse;
+import ru.practicum.front.service.dto.RateResponse;
 
 import java.time.LocalDate;
 import java.util.Collections;
@@ -126,6 +127,21 @@ public class GatewayApiClient {
                         .body(List.class),
                 List.of("Переводы временно недоступны."),
                 "transfer"
+        );
+    }
+
+    public List<RateResponse> getRates(String bearer) {
+        return safeCall(
+                () -> {
+                    RateResponse[] response = client.get()
+                            .uri("/api/exchange/rates")
+                            .header("Authorization", "Bearer " + bearer)
+                            .retrieve()
+                            .body(RateResponse[].class);
+                    return response == null ? List.of() : List.of(response);
+                },
+                List.of(),
+                "getRates"
         );
     }
 

@@ -111,6 +111,31 @@
             </table>
         </form>
     </td></tr>
+    <tr><td style="padding:2px;">
+        <table style="width:100%;margin-left:auto;margin-right:auto;border-radius:2%;padding:10px;background-color:whitesmoke;">
+            <tr>
+                <td colspan="3" style="font-weight:bold;">
+                    Курсы валют
+                    <span th:if="${rates!=null and !#lists.isEmpty(rates)}">
+                        (базовая валюта — <span th:text="${rates.get(0).baseCurrency()}"></span>)
+                    </span>
+                </td>
+            </tr>
+            <tr th:if="${rates==null or #lists.isEmpty(rates)}">
+                <td colspan="3">Курсы временно недоступны.</td>
+            </tr>
+            <tr th:if="${rates!=null and !#lists.isEmpty(rates)}" style="font-weight:bold;">
+                <td>Валюта</td>
+                <td>Покупка</td>
+                <td>Продажа</td>
+            </tr>
+            <tr th:each="rate : ${rates}">
+                <td th:text="${rate.currency()}"/>
+                <td th:text="${rate.buyRate()}"/>
+                <td th:text="${rate.sellRate()}"/>
+            </tr>
+        </table>
+    </td></tr>
 </table>
 </body>
 

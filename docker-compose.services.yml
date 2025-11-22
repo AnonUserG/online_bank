@@ -118,5 +118,42 @@ services:
     networks:
       - bank-network
 
+  exchange-service:
+    build: ./exchange-service
+    container_name: bank-exchange-service
+    ports:
+      - "8086:8086"
+    environment:
+      SERVER_PORT: 8086
+      SPRING_CLOUD_CONSUL_HOST: consul
+      SPRING_CLOUD_CONSUL_PORT: 8500
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/bank
+      SPRING_DATASOURCE_USERNAME: bank
+      SPRING_DATASOURCE_PASSWORD: bank123
+      BASE_CURRENCY: RUB
+    depends_on:
+      - postgres
+      - consul
+    networks:
+      - bank-network
+
+  exchange-generator-service:
+    build: ./exchange-generator-service
+    container_name: bank-exchange-generator-service
+    ports:
+      - "8087:8087"
+    environment:
+      SPRING_CLOUD_CONSUL_HOST: consul
+      SPRING_CLOUD_CONSUL_PORT: 8500
+      SERVER_PORT: 8087
+      EXCHANGE_BASE_URL: http://exchange-service:8086
+      BASE_CURRENCY: RUB
+      TARGET_CURRENCIES: USD,CNY
+      GENERATION_PERIOD_MS: 3000
+    depends_on:
+      - consul
+    networks:
+      - bank-network
+
 networks:
   bank-network:

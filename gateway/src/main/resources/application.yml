@@ -73,6 +73,15 @@ spring:
               args:
                 name: notificationsCB
                 fallbackUri: forward:/fallback/notifications
+        - id: exchange
+          uri: lb://exchange-service
+          predicates:
+            - Path=/api/exchange/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: exchangeCB
+                fallbackUri: forward:/fallback/exchange
 
 
 management:
@@ -103,6 +112,11 @@ resilience4j:
         failureRateThreshold: 50
         waitDurationInOpenState: 10s
       notificationsCB:
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 20
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+      exchangeCB:
         slidingWindowType: COUNT_BASED
         slidingWindowSize: 20
         failureRateThreshold: 50
