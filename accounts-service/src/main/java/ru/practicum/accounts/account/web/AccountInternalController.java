@@ -1,6 +1,7 @@
 package ru.practicum.accounts.account.web;
 
 import jakarta.validation.Valid;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -11,6 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 import ru.practicum.accounts.account.service.AccountService;
 import ru.practicum.accounts.account.web.dto.AccountDetailsDto;
 import ru.practicum.accounts.account.web.dto.BalanceAdjustmentRequest;
+import ru.practicum.accounts.account.web.dto.BankAccountDto;
 
 /**
  * Internal REST endpoints for cross-service calls.
@@ -25,6 +27,11 @@ public class AccountInternalController {
     @GetMapping("/{login}")
     public AccountDetailsDto getDetails(@PathVariable String login) {
         return accountService.getAccountDetails(login);
+    }
+
+    @GetMapping("/{login}/accounts")
+    public List<BankAccountDto> getAccounts(@PathVariable String login) {
+        return accountService.listAccounts(login);
     }
 
     @PostMapping("/{login}/balance")

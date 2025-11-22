@@ -152,7 +152,7 @@ class AccountServiceTest {
         when(bankAccountRepository.findByUserLoginForUpdate("alice")).thenReturn(Optional.of(bank));
 
         var details = service.adjustBalance("alice",
-                new BalanceAdjustmentRequest(BigDecimal.valueOf(50), BalanceOperationType.DEPOSIT));
+                new BalanceAdjustmentRequest(BigDecimal.valueOf(50), BalanceOperationType.DEPOSIT, null));
 
         assertThat(details.balance()).isEqualByComparingTo("150");
         verify(bankAccountRepository).save(bank);
@@ -166,7 +166,7 @@ class AccountServiceTest {
         when(bankAccountRepository.findByUserLoginForUpdate("alice")).thenReturn(Optional.of(bank));
 
         assertThatThrownBy(() -> service.adjustBalance("alice",
-                new BalanceAdjustmentRequest(BigDecimal.valueOf(50), BalanceOperationType.WITHDRAW)))
+                new BalanceAdjustmentRequest(BigDecimal.valueOf(50), BalanceOperationType.WITHDRAW, null)))
                 .isInstanceOf(InsufficientFundsException.class)
                 .hasMessageContaining("Insufficient funds on source account");
 

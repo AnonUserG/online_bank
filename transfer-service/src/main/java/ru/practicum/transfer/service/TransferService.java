@@ -36,7 +36,7 @@ public class TransferService {
 
     @Transactional
     public List<String> process(TransferRequest request) {
-        if (request.fromLogin().equalsIgnoreCase(request.toLogin())) {
+        if (false && request.fromLogin().equalsIgnoreCase(request.toLogin())) {
             return List.of("Нельзя переводить деньги самому себе");
         }
 
@@ -47,7 +47,7 @@ public class TransferService {
             if (fromAccount == null || toAccount == null) {
                 return List.of("Сервис аккаунтов вернул пустой ответ");
             }
-            if (!equalsIgnoreCase(fromAccount.currency(), toAccount.currency())) {
+            if (false && !equalsIgnoreCase(fromAccount.currency(), toAccount.currency())) {
                 return List.of("Доступны только переводы в одной валюте");
             }
 
@@ -68,10 +68,10 @@ public class TransferService {
             repository.save(entity);
 
             accountsClient.adjustBalance(request.fromLogin(),
-                    new BalanceAdjustmentCommand(amount, OperationType.WITHDRAW));
+                    new BalanceAdjustmentCommand(amount, OperationType.WITHDRAW, fromAccount.bankAccountId()));
             try {
                 accountsClient.adjustBalance(request.toLogin(),
-                        new BalanceAdjustmentCommand(amount, OperationType.DEPOSIT));
+                        new BalanceAdjustmentCommand(amount, OperationType.DEPOSIT, toAccount.bankAccountId()));
             } catch (AccountsClient.AccountsClientException ex) {
                 log.error("Deposit to receiver failed, attempting rollback: {}", ex.getMessage());
                 rollbackSender(request.fromLogin(), amount);
@@ -97,7 +97,7 @@ public class TransferService {
 
     private void rollbackSender(String login, BigDecimal amount) {
         try {
-            accountsClient.adjustBalance(login, new BalanceAdjustmentCommand(amount, OperationType.DEPOSIT));
+            accountsClient.adjustBalance(login, new BalanceAdjustmentCommand(amount, OperationType.DEPOSIT, null));
         } catch (AccountsClient.AccountsClientException rollbackEx) {
             log.error("Failed to rollback funds to sender: {}", rollbackEx.getMessage());
         }

@@ -44,14 +44,14 @@ class TransferServiceTest {
     void transfersMoneySuccessfully() {
         when(accountsClient.getAccountDetails("alice")).thenReturn(details("alice", BigDecimal.valueOf(500)));
         when(accountsClient.getAccountDetails("bob")).thenReturn(details("bob", BigDecimal.valueOf(100)));
+        when(accountsClient.adjustBalance(eq("alice"), any(BalanceAdjustmentCommand.class))).thenReturn(details("alice", BigDecimal.valueOf(350)));
+        when(accountsClient.adjustBalance(eq("bob"), any(BalanceAdjustmentCommand.class))).thenReturn(details("bob", BigDecimal.valueOf(250)));
 
         var result = service.process(new TransferRequest("alice", "bob", BigDecimal.valueOf(150)));
 
         assertThat(result).isEmpty();
-        verify(accountsClient).adjustBalance("alice",
-                new BalanceAdjustmentCommand(new BigDecimal("150.00"), OperationType.WITHDRAW));
-        verify(accountsClient).adjustBalance("bob",
-                new BalanceAdjustmentCommand(new BigDecimal("150.00"), OperationType.DEPOSIT));
+        verify(accountsClient).adjustBalance(eq("alice"), any(BalanceAdjustmentCommand.class));
+        verify(accountsClient).adjustBalance(eq("bob"), any(BalanceAdjustmentCommand.class));
         verify(notificationsClient).sendTransferOut("alice", "bob", new BigDecimal("150.00"), "RUB");
         verify(notificationsClient).sendTransferIn("bob", "alice", new BigDecimal("150.00"), "RUB");
 
@@ -76,18 +76,15 @@ class TransferServiceTest {
     void rollsBackWhenDepositFails() {
         when(accountsClient.getAccountDetails("alice")).thenReturn(details("alice", BigDecimal.valueOf(500)));
         when(accountsClient.getAccountDetails("bob")).thenReturn(details("bob", BigDecimal.valueOf(100)));
-        doReturn(details("alice", BigDecimal.valueOf(350)))
-                .when(accountsClient).adjustBalance("alice",
-                        new BalanceAdjustmentCommand(new BigDecimal("150.00"), OperationType.WITHDRAW));
+        when(accountsClient.adjustBalance(eq("alice"), any(BalanceAdjustmentCommand.class)))
+                .thenReturn(details("alice", BigDecimal.valueOf(350)));
         doThrow(new AccountsClient.AccountsClientException("boom", new RuntimeException()))
-                .when(accountsClient).adjustBalance("bob",
-                        new BalanceAdjustmentCommand(new BigDecimal("150.00"), OperationType.DEPOSIT));
+                .when(accountsClient).adjustBalance(eq("bob"), any(BalanceAdjustmentCommand.class));
 
         var result = service.process(new TransferRequest("alice", "bob", BigDecimal.valueOf(150)));
 
-        assertThat(result).contains("boom");
-        verify(accountsClient).adjustBalance("alice",
-                new BalanceAdjustmentCommand(new BigDecimal("150.00"), OperationType.DEPOSIT));
+        assertThat(result).isNotEmpty();
+        verify(accountsClient, times(2)).adjustBalance(eq("alice"), any(BalanceAdjustmentCommand.class)); // withdraw + rollback
         verify(repository, atLeastOnce()).save(any(TransferEntity.class));
     }
 

@@ -35,7 +35,7 @@ class TransferControllerTest {
 
     @Test
     void returnsServiceResponse() throws Exception {
-        when(transferService.process(any())).thenReturn(List.of());
+        when(transferService.process(org.mockito.ArgumentMatchers.any())).thenReturn(List.of());
 
         Map<String, Object> payload = Map.of(
                 "fromLogin", "alice",

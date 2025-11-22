@@ -12,13 +12,10 @@ import ru.practicum.accounts.account.model.AccountEntity;
  */
 public interface AccountRepository extends JpaRepository<AccountEntity, UUID> {
 
-    @EntityGraph(attributePaths = "bankAccount")
     Optional<AccountEntity> findByLogin(String login);
 
     boolean existsByLogin(String login);
 
     @Override
-    @EntityGraph(attributePaths = "bankAccount")
     List<AccountEntity> findAll();
 }
-

@@ -1,6 +1,7 @@
 package ru.practicum.accounts.account.repository;
 
 import jakarta.persistence.LockModeType;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -15,7 +16,18 @@ import ru.practicum.accounts.account.model.BankAccountEntity;
 public interface BankAccountRepository extends JpaRepository<BankAccountEntity, UUID> {
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("select b from BankAccountEntity b join fetch b.user u where u.login = :login")
-    Optional<BankAccountEntity> findByUserLoginForUpdate(@Param("login") String login);
-}
+    Optional<BankAccountEntity> findFirstByUser_LoginOrderByCreatedAtAsc(String login);
 
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    Optional<BankAccountEntity> findById(UUID id);
+
+    List<BankAccountEntity> findAllByUser_Login(String login);
+
+    /**
+     * Kept for backward compatibility, delegates to top-by-login selection.
+     */
+    @Deprecated
+    default Optional<BankAccountEntity> findByUserLoginForUpdate(String login) {
+        return findFirstByUser_LoginOrderByCreatedAtAsc(login);
+    }
+}

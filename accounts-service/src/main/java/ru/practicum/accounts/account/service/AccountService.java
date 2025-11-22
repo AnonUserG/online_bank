@@ -91,11 +91,18 @@ public class AccountService {
         bankAccount.setAccountNumber(generateAccountNumber());
         bankAccount.setCurrency("RUB");
         bankAccount.setBalance(BigDecimal.ZERO);
-        account.setBankAccount(bankAccount);
+        account.addBankAccount(bankAccount);
 
         repository.save(account);
         notificationsClient.sendRegistrationCompleted(request.login());
         return List.of();
+    }
+
+    @Transactional(readOnly = true)
+    public List<ru.practicum.accounts.account.web.dto.BankAccountDto> listAccounts(String login) {
+        return bankAccountRepository.findAllByUser_Login(login).stream()
+                .map(mapper::toBankDto)
+                .toList();
     }
 
     @Transactional
@@ -113,7 +120,7 @@ public class AccountService {
         var entity = repository.findByLogin(login)
                 .orElseThrow(() -> new AccountNotFoundException("User '%s' not found".formatted(login)));
 
-        var bank = entity.getBankAccount();
+        var bank = primary(entity);
         var balance = bank != null ? bank.getBalance() : BigDecimal.ZERO;
         if (balance.compareTo(BigDecimal.ZERO) > 0) {
             throw new AccountDeletionException("Account contains funds and cannot be removed");
@@ -127,22 +134,24 @@ public class AccountService {
 
     @Transactional
     public AccountDetailsDto adjustBalance(String login, BalanceAdjustmentRequest request) {
-        var bank = bankAccountRepository.findByUserLoginForUpdate(login)
+        var bank = request.bankAccountId() != null
+                ? bankAccountRepository.findById(request.bankAccountId())
+                : bankAccountRepository.findByUserLoginForUpdate(login);
+        var bankEntity = bank
                 .orElseThrow(() -> new AccountNotFoundException("User '%s' not found".formatted(login)));
-        var entity = bank.getUser();
+        var entity = bankEntity.getUser();
 
         var amount = request.amount();
         if (request.type() == BalanceOperationType.DEPOSIT) {
-            bank.setBalance(bank.getBalance().add(amount));
+            bankEntity.setBalance(bankEntity.getBalance().add(amount));
         } else {
-            if (bank.getBalance().compareTo(amount) < 0) {
+            if (bankEntity.getBalance().compareTo(amount) < 0) {
                 throw new InsufficientFundsException("Insufficient funds on source account");
             }
-            bank.setBalance(bank.getBalance().subtract(amount));
+            bankEntity.setBalance(bankEntity.getBalance().subtract(amount));
         }
 
-        bankAccountRepository.save(bank);
-        entity.setBankAccount(bank);
+        bankAccountRepository.save(bankEntity);
         return mapper.toDetailsDto(entity);
     }
 
@@ -152,6 +161,13 @@ public class AccountService {
             builder.append(random.nextInt(10));
         }
         return builder.toString();
+    }
+
+    private ru.practicum.accounts.account.model.BankAccountEntity primary(AccountEntity entity) {
+        if (entity == null || entity.getBankAccounts() == null || entity.getBankAccounts().isEmpty()) {
+            return null;
+        }
+        return entity.getBankAccounts().getFirst();
     }
 }
 

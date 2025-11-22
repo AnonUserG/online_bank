@@ -6,7 +6,7 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.OneToOne;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
@@ -34,7 +34,7 @@ public class BankAccountEntity {
     @GenericGenerator(name = "uuid2", strategy = "org.hibernate.id.UUIDGenerator")
     private UUID id;
 
-    @OneToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private AccountEntity user;
 
@@ -73,6 +73,11 @@ public class BankAccountEntity {
 
     public void setUser(AccountEntity user) {
         this.user = user;
+        if (user != null) {
+            var list = user.getBankAccounts();
+            if (list != null && !list.contains(this)) {
+                list.add(this);
+            }
+        }
     }
 }
-

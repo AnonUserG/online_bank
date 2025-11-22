@@ -8,6 +8,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 import ru.practicum.front.service.dto.AccountResponse;
+import ru.practicum.front.service.dto.AccountDetailsResponse;
+import ru.practicum.front.service.dto.BankAccountResponse;
 import ru.practicum.front.service.dto.RateResponse;
 
 import java.time.LocalDate;
@@ -53,6 +55,18 @@ public class GatewayApiClient {
                 },
                 List.of(),
                 "getAllUsers"
+        );
+    }
+
+    public AccountDetailsResponse getAccountDetails(String login, String bearer) {
+        return safeCall(
+                () -> client.get()
+                        .uri("/api/accounts/internal/users/{login}", login)
+                        .header("Authorization", "Bearer " + bearer)
+                        .retrieve()
+                        .body(AccountDetailsResponse.class),
+                null,
+                "getAccountDetails"
         );
     }
 
@@ -142,6 +156,21 @@ public class GatewayApiClient {
                 },
                 List.of(),
                 "getRates"
+        );
+    }
+
+    public List<BankAccountResponse> getUserAccounts(String login, String bearer) {
+        return safeCall(
+                () -> {
+                    BankAccountResponse[] response = client.get()
+                            .uri("/api/accounts/internal/users/{login}/accounts", login)
+                            .header("Authorization", "Bearer " + bearer)
+                            .retrieve()
+                            .body(BankAccountResponse[].class);
+                    return response == null ? List.of() : List.of(response);
+                },
+                List.of(),
+                "getUserAccounts"
         );
     }
 

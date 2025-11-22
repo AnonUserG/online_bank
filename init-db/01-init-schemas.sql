@@ -51,7 +51,7 @@ CREATE TABLE accounts.bank_accounts (
                                         updated_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
                                         CONSTRAINT fk_bank_accounts_user FOREIGN KEY (user_id)
                                         REFERENCES accounts.users(id) ON DELETE CASCADE,
-                                        CONSTRAINT uq_bank_accounts_user UNIQUE (user_id),
+                                        CONSTRAINT uq_bank_accounts_user_currency UNIQUE (user_id, currency),
                                         CONSTRAINT chk_balance_nonneg CHECK (balance >= 0),
                                         CONSTRAINT chk_currency3 CHECK (char_length(currency) = 3)
 );
@@ -171,7 +171,7 @@ WITH upsert_bob AS (
 INSERT INTO accounts.bank_accounts (id, user_id, account_number, currency, balance, status, version, created_at, updated_at)
 SELECT gen_random_uuid(), id, '40800000000000000001', 'RUB', 1500.00, 'ACTIVE', 0, now(), now()
 FROM upsert_bob
-ON CONFLICT (user_id) DO UPDATE
+ON CONFLICT (user_id, currency) DO UPDATE
     SET balance = EXCLUDED.balance,
         status = EXCLUDED.status,
         updated_at = now();
@@ -190,7 +190,18 @@ WITH upsert_alice AS (
 INSERT INTO accounts.bank_accounts (id, user_id, account_number, currency, balance, status, version, created_at, updated_at)
 SELECT gen_random_uuid(), id, '40800000000000000002', 'RUB', 750.00, 'ACTIVE', 0, now(), now()
 FROM upsert_alice
-ON CONFLICT (user_id) DO UPDATE
+ON CONFLICT (user_id, currency) DO UPDATE
     SET balance = EXCLUDED.balance,
         status = EXCLUDED.status,
         updated_at = now();
+
+-- дополнительные счета в другой валюте
+INSERT INTO accounts.bank_accounts (id, user_id, account_number, currency, balance, status, version, created_at, updated_at)
+SELECT gen_random_uuid(), id, '40800000000000000003', 'USD', 300.00, 'ACTIVE', 0, now(), now()
+FROM accounts.users WHERE login = 'bob'
+ON CONFLICT (user_id, currency) DO NOTHING;
+
+INSERT INTO accounts.bank_accounts (id, user_id, account_number, currency, balance, status, version, created_at, updated_at)
+SELECT gen_random_uuid(), id, '40800000000000000004', 'CNY', 500.00, 'ACTIVE', 0, now(), now()
+FROM accounts.users WHERE login = 'alice'
+ON CONFLICT (user_id, currency) DO NOTHING;

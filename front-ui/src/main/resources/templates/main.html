@@ -90,21 +90,79 @@
     <tr><td style="padding:2px;">
         <form method="post" th:action="${'/user/'+login+'/transfer'}">
             <table style="width:100%;margin-left:auto;margin-right:auto;border-radius:2%;padding:10px;background-color:whitesmoke;">
+                <tr>
+                    <td colspan="4" style="font-weight:bold;">Перевод между своими счетами</td>
+                </tr>
                 <tr th:if="${transferOtherErrors!=null}" th:each="transferOtherError : ${transferOtherErrors}">
-                    <td style="color:red;" th:text="${transferOtherError}"/>
+                    <td colspan="4" style="color:red;" th:text="${transferOtherError}"/>
                 </tr>
                 <tr>
-                    <td style="font-weight:bold;">Перевод</td>
-                    <td>
-                        <input name="value" type="number" required/>
+                    <td style="font-weight:bold;">Со счёта</td>
+                    <td colspan="3">
+                        <input type="hidden" name="to_login" th:value="${login}"/>
+                        <select name="from_account" style="width:100%" th:disabled="${accounts==null or accounts.size()<1}">
+                            <option th:each="acc : ${accounts}"
+                                    th:value="${acc.id()}"
+                                    th:text="|${acc.accountNumber()} (${acc.currency()}, ${acc.balance()})|"/>
+                        </select>
                     </td>
+                </tr>
+                <tr>
+                    <td style="font-weight:bold;">На счёт</td>
+                    <td colspan="3">
+                        <select name="to_account" style="width:100%" th:disabled="${accounts==null or accounts.size()<2}">
+                            <option th:each="acc : ${accounts}"
+                                    th:value="${acc.id()}"
+                                    th:text="|${acc.accountNumber()} (${acc.currency()}, ${acc.balance()})|"/>
+                        </select>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="font-weight:bold;">Сумма</td>
+                    <td><input name="value" type="number" step="0.01" required/></td>
+                    <td/>
+                    <td style="text-align:right">
+                        <button th:disabled="${accounts==null or accounts.size()<2}">Перевести</button>
+                    </td>
+                </tr>
+                <tr th:if="${accounts!=null and accounts.size()<2}">
+                    <td colspan="4" style="color:gray;">Для перевода между своими счетами нужен хотя бы один дополнительный счёт.</td>
+                </tr>
+            </table>
+        </form>
+    </td></tr>
+
+    <tr><td style="padding:2px;">
+        <form method="post" th:action="${'/user/'+login+'/transfer'}">
+            <table style="width:100%;margin-left:auto;margin-right:auto;border-radius:2%;padding:10px;background-color:whitesmoke;">
+                <tr>
+                    <td colspan="4" style="font-weight:bold;">Перевод на другой аккаунт</td>
+                </tr>
+                <tr th:if="${transferOtherErrors!=null}" th:each="transferOtherError : ${transferOtherErrors}">
+                    <td colspan="4" style="color:red;" th:text="${transferOtherError}"/>
+                </tr>
+                <tr>
+                    <td style="font-weight:bold;">Со счёта</td>
+                    <td colspan="3">
+                        <select name="from_account" style="width:100%" th:disabled="${accounts==null or accounts.size()<1}">
+                            <option th:each="acc : ${accounts}"
+                                    th:value="${acc.id()}"
+                                    th:text="|${acc.accountNumber()} (${acc.currency()}, ${acc.balance()})|"/>
+                        </select>
+                    </td>
+                </tr>
+                <tr>
+                    <td style="font-weight:bold;">Кому</td>
                     <td>
-                        Кому
                         <select name="to_login">
                             <option th:each="user : ${users}" th:value="${user.login}" th:text="${user.name}"/>
                         </select>
                     </td>
-                    <td style="text-align:right">
+                    <td style="font-weight:bold;">Сумма</td>
+                    <td><input name="value" type="number" step="0.01" required/></td>
+                </tr>
+                <tr>
+                    <td colspan="4" style="text-align:right">
                         <button>Перевести</button>
                     </td>
                 </tr>

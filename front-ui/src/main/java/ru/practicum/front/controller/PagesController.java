@@ -19,7 +19,9 @@ import ru.practicum.front.mapper.AccountMapper;
 import ru.practicum.front.service.Dto;
 import ru.practicum.front.service.GatewayApiClient;
 import ru.practicum.front.service.dto.AccountResponse;
+import ru.practicum.front.service.dto.AccountDetailsResponse;
 import ru.practicum.front.service.dto.RateResponse;
+import ru.practicum.front.service.dto.BankAccountResponse;
 import ru.practicum.front.util.ValidationUtils;
 
 import java.math.BigDecimal;
@@ -84,9 +86,13 @@ public class PagesController {
                 .map(accountMapper::toUserShort)
                 .toList();
 
+        AccountDetailsResponse accountDetails = api.getAccountDetails(login, bearer);
+        List<BankAccountResponse> bankAccounts = api.getUserAccounts(login, bearer);
+
         List<RateResponse> rates = api.getRates(bearer);
 
         model.addAttribute("users", users);
+        model.addAttribute("accounts", bankAccounts);
         model.addAttribute("login", profile.login());
         model.addAttribute("name", profile.name());
         model.addAttribute("birthdate", profile.birthdate());

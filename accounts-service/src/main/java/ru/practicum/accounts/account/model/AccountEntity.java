@@ -6,12 +6,14 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
-import jakarta.persistence.OneToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.PreUpdate;
 import jakarta.persistence.Table;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -57,8 +59,8 @@ public class AccountEntity {
     @Column(name = "updated_at", nullable = false)
     private OffsetDateTime updatedAt;
 
-    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY, optional = false)
-    private BankAccountEntity bankAccount;
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
+    private List<BankAccountEntity> bankAccounts = new ArrayList<>();
 
     @PrePersist
     public void prePersist() {
@@ -72,9 +74,18 @@ public class AccountEntity {
         this.updatedAt = OffsetDateTime.now();
     }
 
-    public void setBankAccount(BankAccountEntity bankAccount) {
-        this.bankAccount = bankAccount;
+    public void addBankAccount(BankAccountEntity bankAccount) {
+        bankAccounts.add(bankAccount);
         bankAccount.setUser(this);
     }
-}
 
+    // backward compatibility helpers
+    public BankAccountEntity getBankAccount() {
+        return bankAccounts.isEmpty() ? null : bankAccounts.getFirst();
+    }
+
+    public void setBankAccount(BankAccountEntity bankAccount) {
+        bankAccounts.clear();
+        addBankAccount(bankAccount);
+    }
+}
