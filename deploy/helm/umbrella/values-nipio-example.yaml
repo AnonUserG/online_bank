@@ -12,7 +12,7 @@ front-ui:
     SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_AUTH_URI: http://keycloak.127.0.0.1.nip.io/realms/bank/protocol/openid-connect/auth
     SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_TOKEN_URI: http://bank-keycloak:8080/realms/bank/protocol/openid-connect/token
     SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_JWK_SET_URI: http://bank-keycloak:8080/realms/bank/protocol/openid-connect/certs
-    SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_END_SESSION_URI: http://bank-keycloak:8080/realms/bank/protocol/openid-connect/logout
+    SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_END_SESSION_URI: http://keycloak.127.0.0.1.nip.io/realms/bank/protocol/openid-connect/logout
 
 keycloak:
   image:

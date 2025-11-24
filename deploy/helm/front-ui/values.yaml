@@ -31,4 +31,4 @@ env:
   SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_AUTH_URI: "{{ printf \"http://%s-keycloak:8080/realms/bank/protocol/openid-connect/auth\" .Release.Name }}"
   SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_TOKEN_URI: "{{ printf \"http://%s-keycloak:8080/realms/bank/protocol/openid-connect/token\" .Release.Name }}"
   SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_JWK_SET_URI: "{{ printf \"http://%s-keycloak:8080/realms/bank/protocol/openid-connect/certs\" .Release.Name }}"
-  SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_END_SESSION_URI: "{{ printf \"http://%s-keycloak:8080/realms/bank/protocol/openid-connect/logout\" .Release.Name }}"
+  SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_END_SESSION_URI: "http://keycloak.127.0.0.1.nip.io/realms/bank/protocol/openid-connect/logout"
