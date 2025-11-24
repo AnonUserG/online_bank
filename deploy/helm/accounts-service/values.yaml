@@ -1,0 +1,25 @@
+replicaCount: 1
+
+image:
+  repository: bank/accounts-service
+  tag: "latest"
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 8082
+
+resources: {}
+
+env:
+  SERVER_PORT: "8082"
+  SPRING_DATASOURCE_URL: "{{ printf \"jdbc:postgresql://%s-postgres:5432/bank\" .Release.Name }}"
+  SPRING_DATASOURCE_USERNAME: bank
+  SPRING_DATASOURCE_PASSWORD: bank123
+  KEYCLOAK_BASE_URL: "{{ printf \"http://%s-keycloak:8080\" .Release.Name }}"
+  KEYCLOAK_REALM: bank
+  KEYCLOAK_ADMIN_USERNAME: admin
+  KEYCLOAK_ADMIN_PASSWORD: admin123
+  NOTIFICATIONS_BASE_URL: "{{ printf \"http://%s-notifications-service:8084\" .Release.Name }}"
+  SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: "{{ printf \"http://%s-keycloak:8080/realms/bank/protocol/openid-connect/certs\" .Release.Name }}"
+  SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: "http://keycloak.127.0.0.1.nip.io:8080/realms/bank"

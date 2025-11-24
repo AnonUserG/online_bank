@@ -1,0 +1,9 @@
+{{- if .Values.realmImport.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ printf "%s-%s-realm" .Release.Name .Chart.Name | trunc 63 | trimSuffix "-" }}
+data:
+  {{ .Values.realmImport.file }}: |
+{{ .Files.Get .Values.realmImport.file | indent 4 }}
+{{- end }}

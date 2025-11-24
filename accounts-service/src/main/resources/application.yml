@@ -4,8 +4,6 @@ server:
 spring:
   application:
     name: accounts-service
-  config:
-    import: "optional:consul:"
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/bank}
     username: ${SPRING_DATASOURCE_USERNAME:bank}
@@ -25,20 +23,6 @@ spring:
         jwt:
           jwk-set-uri: ${SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI:http://keycloak:8080/realms/bank/protocol/openid-connect/certs}
           issuer-uri: ${SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI:http://localhost:8080/realms/bank}
-  cloud:
-    consul:
-      host: ${SPRING_CLOUD_CONSUL_HOST:consul}
-      port: ${SPRING_CLOUD_CONSUL_PORT:8500}
-      discovery:
-        health-check-path: /actuator/health
-        health-check-interval: 10s
-        prefer-ip-address: true
-      config:
-        enabled: true
-        format: YAML
-        prefixes: ${CONSUL_PREFIXES:config}
-        default-context: application
-        data-key: data
 keycloak:
   base-url: ${KEYCLOAK_BASE_URL:http://localhost:8080}
   realm: ${KEYCLOAK_REALM:bank}

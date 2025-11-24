@@ -1,13 +1,6 @@
 spring:
   application:
     name: accounts-service
-  cloud:
-    consul:
-      enabled: false
-      config:
-        enabled: false
-      discovery:
-        enabled: false
   jpa:
     hibernate:
       ddl-auto: update

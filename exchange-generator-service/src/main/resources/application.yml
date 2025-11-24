@@ -4,22 +4,6 @@ server:
 spring:
   application:
     name: exchange-generator-service
-  config:
-    import: "optional:consul:"
-  cloud:
-    consul:
-      host: ${SPRING_CLOUD_CONSUL_HOST:consul}
-      port: ${SPRING_CLOUD_CONSUL_PORT:8500}
-      discovery:
-        health-check-path: /actuator/health
-        health-check-interval: 10s
-        prefer-ip-address: true
-      config:
-        enabled: true
-        format: YAML
-        prefixes: ${CONSUL_PREFIXES:config}
-        default-context: application
-        data-key: data
 
 app:
   exchange-base-url: ${EXCHANGE_BASE_URL:http://exchange-service:8086}

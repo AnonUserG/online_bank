@@ -1,0 +1,19 @@
+replicaCount: 1
+
+image:
+  repository: bank/exchange-generator-service
+  tag: "latest"
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 8087
+
+resources: {}
+
+env:
+  SERVER_PORT: "8087"
+  EXCHANGE_BASE_URL: "{{ printf \"http://%s-exchange-service:8086\" .Release.Name }}"
+  BASE_CURRENCY: RUB
+  TARGET_CURRENCIES: USD,CNY
+  GENERATION_PERIOD_MS: "3000"

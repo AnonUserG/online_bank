@@ -1,0 +1,29 @@
+global:
+  imageTag: "latest"
+
+postgres: {}
+keycloak: {}
+accounts-service:
+  image:
+    tag: "latest"
+notifications-service:
+  image:
+    tag: "latest"
+cash-service:
+  image:
+    tag: "latest"
+transfer-service:
+  image:
+    tag: "latest"
+blocker-service:
+  image:
+    tag: "latest"
+exchange-service:
+  image:
+    tag: "latest"
+exchange-generator-service:
+  image:
+    tag: "latest"
+front-ui:
+  image:
+    tag: "latest"

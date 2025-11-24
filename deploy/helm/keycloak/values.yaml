@@ -1,0 +1,41 @@
+replicaCount: 1
+
+image:
+  repository: quay.io/keycloak/keycloak
+  tag: "23.0"
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 8080
+
+resources: {}
+
+env:
+  KEYCLOAK_ADMIN: admin
+  KEYCLOAK_ADMIN_PASSWORD: admin123
+  KC_DB: postgres
+  KC_DB_URL: "{{ printf \"jdbc:postgresql://%s-postgres:5432/bank\" .Release.Name }}"
+  KC_DB_USERNAME: bank
+  KC_DB_PASSWORD: bank123
+  KC_HOSTNAME: "{{ printf \"%s-keycloak\" .Release.Name }}"
+  KC_HOSTNAME_STRICT: "false"
+  KC_HOSTNAME_STRICT_HTTPS: "false"
+  KC_HEALTH_ENABLED: "true"
+  KC_METRICS_ENABLED: "true"
+
+extraArgs: []
+
+realmImport:
+  enabled: true
+  file: realm-export.json
+
+ingress:
+  enabled: false
+  className: ""
+  hosts:
+    - host: keycloak.local
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: []

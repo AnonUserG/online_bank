@@ -1,0 +1,16 @@
+replicaCount: 1
+
+image:
+  repository: bank/blocker-service
+  tag: "latest"
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 8088
+
+resources: {}
+
+env:
+  SERVER_PORT: "8088"
+  BLOCK_PROBABILITY: "0.3"

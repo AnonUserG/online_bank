@@ -1,8 +1,3 @@
-﻿spring:
-  cloud:
-    consul:
-      enabled: false
-      discovery:
-        enabled: false
-      config:
-        enabled: false
+spring:
+  application:
+    name: notifications-service

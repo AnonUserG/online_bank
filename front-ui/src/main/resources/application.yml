@@ -4,22 +4,6 @@ server:
 spring:
   application:
     name: front-ui
-  config:
-    import: "optional:consul:"
-  cloud:
-    consul:
-      host: ${SPRING_CLOUD_CONSUL_HOST:consul}
-      port: ${SPRING_CLOUD_CONSUL_PORT:8500}
-      discovery:
-        health-check-path: /actuator/health
-        health-check-interval: 10s
-        prefer-ip-address: true
-      config:
-        enabled: true
-        format: YAML
-        prefixes: ${CONSUL_PREFIXES:config}
-        default-context: application
-        data-key: data
 
   security:
     oauth2:
@@ -42,7 +26,10 @@ spring:
             scope: ${SPRING_SECURITY_OAUTH2_CLIENT_REGISTRATION_KEYCLOAK_SCOPE:openid,profile,email}
 
 app:
-  gateway-base-url: ${GATEWAY_BASE_URL:http://localhost:8090}
+  accounts-base-url: ${ACCOUNTS_BASE_URL:http://localhost:8082}
+  cash-base-url: ${CASH_BASE_URL:http://localhost:8083}
+  transfer-base-url: ${TRANSFER_BASE_URL:http://localhost:8085}
+  exchange-base-url: ${EXCHANGE_BASE_URL:http://localhost:8086}
 
 management:
   endpoints:

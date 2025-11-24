@@ -4,9 +4,7 @@ import org.mapstruct.Mapper;
 import ru.practicum.front.service.Dto;
 import ru.practicum.front.service.dto.AccountResponse;
 
-/**
- * Преобразование ответов gateway в view-DTO.
- */
+/** Преобразование ответов backend-сервисов в view-DTO. */
 @Mapper(componentModel = "spring")
 public interface AccountMapper {
 

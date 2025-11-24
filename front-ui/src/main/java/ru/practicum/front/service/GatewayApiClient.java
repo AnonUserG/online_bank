@@ -1,39 +1,46 @@
 package ru.practicum.front.service;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
-import ru.practicum.front.service.dto.AccountResponse;
 import ru.practicum.front.service.dto.AccountDetailsResponse;
+import ru.practicum.front.service.dto.AccountResponse;
 import ru.practicum.front.service.dto.BankAccountResponse;
 import ru.practicum.front.service.dto.RateResponse;
 
 import java.time.LocalDate;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
 /**
- * HTTP-клиент, который ходит в gateway.
+ * HTTP-клиент для обращения к backend-сервисам напрямую (без Spring Cloud Gateway).
  */
 @Component
 @Slf4j
 public class GatewayApiClient {
 
-    private final RestClient client;
+    private final RestClient accountsClient;
+    private final RestClient cashClient;
+    private final RestClient transferClient;
+    private final RestClient exchangeClient;
 
-    public GatewayApiClient(@Value("${app.gateway-base-url}") String gatewayBaseUrl) {
-        this.client = RestClient.builder().baseUrl(gatewayBaseUrl).build();
+    public GatewayApiClient(@Value("${app.accounts-base-url}") String accountsBaseUrl,
+                            @Value("${app.cash-base-url}") String cashBaseUrl,
+                            @Value("${app.transfer-base-url}") String transferBaseUrl,
+                            @Value("${app.exchange-base-url}") String exchangeBaseUrl) {
+        this.accountsClient = RestClient.builder().baseUrl(accountsBaseUrl).build();
+        this.cashClient = RestClient.builder().baseUrl(cashBaseUrl).build();
+        this.transferClient = RestClient.builder().baseUrl(transferBaseUrl).build();
+        this.exchangeClient = RestClient.builder().baseUrl(exchangeBaseUrl).build();
     }
 
     public AccountResponse getUserProfile(String login, String bearer) {
         return safeCall(
-                () -> client.get()
+                () -> accountsClient.get()
                         .uri("/api/accounts/users/{login}", login)
                         .header("Authorization", "Bearer " + bearer)
                         .retrieve()
@@ -46,7 +53,7 @@ public class GatewayApiClient {
     public List<AccountResponse> getAllUsers(String bearer) {
         return safeCall(
                 () -> {
-                    AccountResponse[] response = client.get()
+                    AccountResponse[] response = accountsClient.get()
                             .uri("/api/accounts/users")
                             .header("Authorization", "Bearer " + bearer)
                             .retrieve()
@@ -60,7 +67,7 @@ public class GatewayApiClient {
 
     public AccountDetailsResponse getAccountDetails(String login, String bearer) {
         return safeCall(
-                () -> client.get()
+                () -> accountsClient.get()
                         .uri("/api/accounts/internal/users/{login}", login)
                         .header("Authorization", "Bearer " + bearer)
                         .retrieve()
@@ -73,14 +80,14 @@ public class GatewayApiClient {
     public List<String> changePassword(String login, String newPassword, String bearer) {
         var payload = Map.of("login", login, "password", newPassword);
         return safeCall(
-                () -> client.post()
+                () -> accountsClient.post()
                         .uri("/api/accounts/users/{login}/password", login)
                         .contentType(MediaType.APPLICATION_JSON)
                         .header("Authorization", "Bearer " + bearer)
                         .body(payload)
                         .retrieve()
                         .body(List.class),
-                List.of("Не удалось изменить пароль. Попробуйте позже."),
+                List.of("Не удалось изменить пароль."),
                 "changePassword"
         );
     }
@@ -88,14 +95,14 @@ public class GatewayApiClient {
     public List<String> updateProfile(String login, String name, String birthdateIso, String bearer) {
         var payload = Map.of("name", name, "birthdate", birthdateIso);
         return safeCall(
-                () -> client.patch()
+                () -> accountsClient.patch()
                         .uri("/api/accounts/users/{login}", login)
                         .contentType(MediaType.APPLICATION_JSON)
                         .header("Authorization", "Bearer " + bearer)
                         .body(payload)
                         .retrieve()
                         .body(List.class),
-                List.of("Не удалось обновить профиль. Попробуйте позже."),
+                List.of("Не удалось обновить профиль."),
                 "updateProfile"
         );
     }
@@ -103,13 +110,13 @@ public class GatewayApiClient {
     public List<String> register(String login, String password, String name, String birthdateIso) {
         var payload = Map.of("login", login, "password", password, "name", name, "birthdate", birthdateIso);
         return safeCall(
-                () -> client.post()
+                () -> accountsClient.post()
                         .uri("/api/accounts/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .body(payload)
                         .retrieve()
                         .body(List.class),
-                List.of("Регистрация временно недоступна. Попробуйте позже."),
+                List.of("Не удалось зарегистрировать пользователя."),
                 "register"
         );
     }
@@ -117,14 +124,14 @@ public class GatewayApiClient {
     public List<String> cash(String login, String action, String amount, String bearer) {
         var payload = Map.of("login", login, "action", action, "value", amount);
         return safeCall(
-                () -> client.post()
+                () -> cashClient.post()
                         .uri("/api/cash/operations")
                         .contentType(MediaType.APPLICATION_JSON)
                         .header("Authorization", "Bearer " + bearer)
                         .body(payload)
                         .retrieve()
                         .body(List.class),
-                List.of("Операции с наличными сейчас недоступны."),
+                List.of("Не удалось выполнить операцию со счётом."),
                 "cash"
         );
     }
@@ -132,14 +139,14 @@ public class GatewayApiClient {
     public List<String> transfer(String fromLogin, String toLogin, String amount, String bearer) {
         var payload = Map.of("from_login", fromLogin, "to_login", toLogin, "value", amount);
         return safeCall(
-                () -> client.post()
+                () -> transferClient.post()
                         .uri("/api/transfer/transactions")
                         .contentType(MediaType.APPLICATION_JSON)
                         .header("Authorization", "Bearer " + bearer)
                         .body(payload)
                         .retrieve()
                         .body(List.class),
-                List.of("Переводы временно недоступны."),
+                List.of("Не удалось выполнить перевод."),
                 "transfer"
         );
     }
@@ -147,7 +154,7 @@ public class GatewayApiClient {
     public List<RateResponse> getRates(String bearer) {
         return safeCall(
                 () -> {
-                    RateResponse[] response = client.get()
+                    RateResponse[] response = exchangeClient.get()
                             .uri("/api/exchange/rates")
                             .header("Authorization", "Bearer " + bearer)
                             .retrieve()
@@ -162,7 +169,7 @@ public class GatewayApiClient {
     public List<BankAccountResponse> getUserAccounts(String login, String bearer) {
         return safeCall(
                 () -> {
-                    BankAccountResponse[] response = client.get()
+                    BankAccountResponse[] response = accountsClient.get()
                             .uri("/api/accounts/internal/users/{login}/accounts", login)
                             .header("Authorization", "Bearer " + bearer)
                             .retrieve()
@@ -178,7 +185,7 @@ public class GatewayApiClient {
         try {
             return call.get();
         } catch (RestClientException ex) {
-            log.warn("Gateway call '{}' failed: {}", operation, ex.getMessage());
+            log.warn("API call '{}' failed: {}", operation, ex.getMessage());
             return fallback;
         }
     }

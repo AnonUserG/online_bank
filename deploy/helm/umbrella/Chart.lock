@@ -1,0 +1,33 @@
+dependencies:
+- name: postgres
+  repository: file://../postgres
+  version: 0.1.0
+- name: keycloak
+  repository: file://../keycloak
+  version: 0.1.0
+- name: accounts-service
+  repository: file://../accounts-service
+  version: 0.1.0
+- name: notifications-service
+  repository: file://../notifications-service
+  version: 0.1.0
+- name: cash-service
+  repository: file://../cash-service
+  version: 0.1.0
+- name: transfer-service
+  repository: file://../transfer-service
+  version: 0.1.0
+- name: blocker-service
+  repository: file://../blocker-service
+  version: 0.1.0
+- name: exchange-service
+  repository: file://../exchange-service
+  version: 0.1.0
+- name: exchange-generator-service
+  repository: file://../exchange-generator-service
+  version: 0.1.0
+- name: front-ui
+  repository: file://../front-ui
+  version: 0.1.0
+digest: sha256:eae339f94a63a978ca7379671f4ab3e05bcdbc37041a581ef28c3b012cb1924c
+generated: "2025-11-22T22:49:57.7106674+03:00"
