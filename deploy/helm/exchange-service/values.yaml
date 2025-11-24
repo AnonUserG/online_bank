@@ -18,4 +18,4 @@ env:
   SPRING_DATASOURCE_PASSWORD: bank123
   BASE_CURRENCY: RUB
   SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: "{{ printf \"http://%s-keycloak:8080/realms/bank/protocol/openid-connect/certs\" .Release.Name }}"
-  SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: "http://keycloak.127.0.0.1.nip.io:8080/realms/bank"
+  SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: "http://keycloak.127.0.0.1.nip.io/realms/bank"

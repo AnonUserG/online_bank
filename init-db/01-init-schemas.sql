@@ -58,19 +58,20 @@ CREATE TABLE accounts.bank_accounts (
 
 CREATE INDEX idx_bank_accounts_user_id ON accounts.bank_accounts(user_id);
 
--- ==========================================
 -- 3) EXCHANGE
 -- ==========================================
-CREATE TABLE exchange.currency_rates (
+CREATE TABLE exchange.exchange_rates (
                                          id               BIGSERIAL PRIMARY KEY,
-                                         base_currency    VARCHAR(3)   NOT NULL,
-                                         target_currency  VARCHAR(3)   NOT NULL,
-                                         rate             NUMERIC(19,6) NOT NULL,
-                                         created_at       TIMESTAMPTZ   NOT NULL DEFAULT now(),
-                                         CONSTRAINT uq_currency_pair      UNIQUE (base_currency, target_currency),
-                                         CONSTRAINT chk_base_cur3         CHECK (char_length(base_currency) = 3),
-                                         CONSTRAINT chk_target_cur3       CHECK (char_length(target_currency) = 3),
-                                         CONSTRAINT chk_rate_positive     CHECK (rate > 0)
+                                         base_currency    VARCHAR(3)    NOT NULL,
+                                         currency         VARCHAR(3)    NOT NULL,
+                                         buy_rate         NUMERIC(20,4) NOT NULL,
+                                         sell_rate        NUMERIC(20,4) NOT NULL,
+                                         updated_at       TIMESTAMPTZ   NOT NULL DEFAULT now(),
+                                         CONSTRAINT uq_exchange_pair     UNIQUE (base_currency, currency),
+                                         CONSTRAINT chk_base_cur3        CHECK (char_length(base_currency) = 3),
+                                         CONSTRAINT chk_target_cur3      CHECK (char_length(currency) = 3),
+                                         CONSTRAINT chk_buy_positive     CHECK (buy_rate > 0),
+                                         CONSTRAINT chk_sell_positive    CHECK (sell_rate > 0)
 );
 
 -- ==========================================
@@ -86,6 +87,7 @@ CREATE TABLE transfer.transactions (
                                        idempotency_key  VARCHAR(100) NOT NULL,
                                        created_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
                                        updated_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
+                                       version          BIGINT      NOT NULL DEFAULT 0,
                                        CONSTRAINT chk_transfer_amount    CHECK (amount > 0),
                                        CONSTRAINT chk_transfer_currency3 CHECK (char_length(currency) = 3),
                                        CONSTRAINT uq_transfer_idempotency UNIQUE (idempotency_key)
@@ -106,6 +108,8 @@ CREATE TABLE cash.operations (
                                  status           VARCHAR(20) NOT NULL DEFAULT 'PENDING',  -- PENDING|DONE|FAILED
                                  idempotency_key  VARCHAR(100) NOT NULL,
                                  created_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
+                                 updated_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
+                                 version          BIGINT      NOT NULL DEFAULT 0,
                                  CONSTRAINT chk_cash_amount     CHECK (amount > 0),
                                  CONSTRAINT chk_cash_currency3  CHECK (char_length(currency) = 3),
                                  CONSTRAINT uq_cash_idempotency UNIQUE (idempotency_key)
@@ -144,15 +148,15 @@ CREATE INDEX idx_messages_user ON notifications.messages(user_id);
 -- ==========================================
 -- 8) Начальные курсы валют
 -- ==========================================
-INSERT INTO exchange.currency_rates (base_currency, target_currency, rate) VALUES
-                                                                               ('RUB','RUB',1.000000),
-                                                                               ('RUB','USD',0.011000),
-                                                                               ('RUB','CNY',0.079000),
-                                                                               ('USD','RUB',90.910000),
-                                                                               ('USD','CNY',7.180000),
-                                                                               ('CNY','RUB',12.660000),
-                                                                               ('CNY','USD',0.139000)
-ON CONFLICT (base_currency, target_currency) DO NOTHING;
+INSERT INTO exchange.exchange_rates (base_currency, currency, buy_rate, sell_rate)
+VALUES ('RUB','RUB',1.0000,1.0000),
+       ('RUB','USD',0.0110,0.0110),
+       ('RUB','CNY',0.0790,0.0790),
+       ('USD','RUB',90.9100,90.9100),
+       ('USD','CNY',7.1800,7.1800),
+       ('CNY','RUB',12.6600,12.6600),
+       ('CNY','USD',0.1390,0.1390)
+ON CONFLICT (base_currency, currency) DO NOTHING;
 
 -- ==========================================
 -- 9) демо-пользователи alice/bob (Keycloak)
