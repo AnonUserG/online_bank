@@ -1,0 +1,94 @@
+pipeline {
+    agent any
+    options {
+        timestamps()
+        disableConcurrentBuilds()
+    }
+    parameters {
+        string(name: 'IMAGE_TAG', defaultValue: '', description: 'Override image tag (default: short commit hash)')
+        string(name: 'DOCKER_REGISTRY', defaultValue: 'bank', description: 'Image repository prefix (e.g. bank or registry.example.com/bank)')
+        booleanParam(name: 'PUSH_IMAGE', defaultValue: false, description: 'Push built image to registry')
+        string(name: 'DOCKER_CREDENTIALS_ID', defaultValue: '', description: 'Jenkins credentials id for docker registry (optional)')
+        booleanParam(name: 'DEPLOY_PROD', defaultValue: false, description: 'Also deploy to prod namespace after test')
+        string(name: 'K8S_NAMESPACE_TEST', defaultValue: 'default', description: 'Namespace for test deploy')
+        string(name: 'K8S_NAMESPACE_PROD', defaultValue: 'default', description: 'Namespace for prod deploy')
+    }
+    environment {
+        SERVICE_NAME = 'accounts-service'
+        MODULE_DIR = 'accounts-service'
+        CHART_PATH = "deploy/helm/${SERVICE_NAME}"
+    }
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+        stage('Set Variables') {
+            steps {
+                script {
+                    env.EFFECTIVE_IMAGE_TAG = params.IMAGE_TAG?.trim() ? params.IMAGE_TAG.trim() : (env.GIT_COMMIT ? env.GIT_COMMIT.take(7) : env.BUILD_NUMBER)
+                    env.IMAGE_FULL_NAME = "${params.DOCKER_REGISTRY}/${env.SERVICE_NAME}:${env.EFFECTIVE_IMAGE_TAG}"
+                }
+            }
+        }
+        stage('Validate') {
+            steps {
+                sh "mvn -pl ${env.MODULE_DIR} -am test"
+            }
+        }
+        stage('Build Jar') {
+            steps {
+                sh "mvn -pl ${env.MODULE_DIR} -am clean package -DskipTests"
+            }
+        }
+        stage('Build Image') {
+            steps {
+                sh "docker build -t ${env.IMAGE_FULL_NAME} ${env.MODULE_DIR}"
+            }
+        }
+        stage('Push Image') {
+            when { expression { params.PUSH_IMAGE } }
+            steps {
+                script {
+                    if (params.DOCKER_CREDENTIALS_ID?.trim()) {
+                        docker.withRegistry('', params.DOCKER_CREDENTIALS_ID) {
+                            sh "docker push ${env.IMAGE_FULL_NAME}"
+                        }
+                    } else {
+                        sh "docker push ${env.IMAGE_FULL_NAME}"
+                    }
+                }
+            }
+        }
+        stage('Deploy Test') {
+            steps {
+                sh """
+                  helm upgrade --install ${env.SERVICE_NAME} ${env.CHART_PATH} \
+                    --namespace ${params.K8S_NAMESPACE_TEST} \
+                    --set image.repository=${params.DOCKER_REGISTRY}/${env.SERVICE_NAME} \
+                    --set image.tag=${env.EFFECTIVE_IMAGE_TAG} \
+                    --wait --atomic
+                """
+            }
+        }
+        stage('Deploy Prod') {
+            when { expression { params.DEPLOY_PROD } }
+            steps {
+                input message: 'Deploy to PROD namespace?', ok: 'Deploy'
+                sh """
+                  helm upgrade --install ${env.SERVICE_NAME} ${env.CHART_PATH} \
+                    --namespace ${params.K8S_NAMESPACE_PROD} \
+                    --set image.repository=${params.DOCKER_REGISTRY}/${env.SERVICE_NAME} \
+                    --set image.tag=${env.EFFECTIVE_IMAGE_TAG} \
+                    --wait --atomic
+                """
+            }
+        }
+    }
+    post {
+        always {
+            sh 'kubectl get pods -A --no-headers || true'
+        }
+    }
+}
