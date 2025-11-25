@@ -4,7 +4,7 @@ metadata:
   name: bank-init-sql
 data:
   01-init-schemas.sql: |
-    -- init-db/01-init-schemas.sql
+    -- init-db/01-init-schemas.sql (kept in sync with init-db/01-init-schemas.sql)
     DROP SCHEMA IF EXISTS accounts      CASCADE;
     DROP SCHEMA IF EXISTS cash          CASCADE;
     DROP SCHEMA IF EXISTS transfer      CASCADE;
@@ -12,14 +12,14 @@ data:
     DROP SCHEMA IF EXISTS blocker       CASCADE;
     DROP SCHEMA IF EXISTS notifications CASCADE;
 
+    CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
     CREATE SCHEMA IF NOT EXISTS accounts;
     CREATE SCHEMA IF NOT EXISTS cash;
     CREATE SCHEMA IF NOT EXISTS transfer;
     CREATE SCHEMA IF NOT EXISTS exchange;
     CREATE SCHEMA IF NOT EXISTS blocker;
     CREATE SCHEMA IF NOT EXISTS notifications;
-
-    CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
     CREATE TABLE accounts.users (
       id         UUID PRIMARY KEY,
@@ -51,16 +51,18 @@ data:
     );
     CREATE INDEX idx_bank_accounts_user_id ON accounts.bank_accounts(user_id);
 
-    CREATE TABLE exchange.currency_rates (
+    CREATE TABLE exchange.exchange_rates (
       id               BIGSERIAL PRIMARY KEY,
-      base_currency    VARCHAR(3)   NOT NULL,
-      target_currency  VARCHAR(3)   NOT NULL,
-      rate             NUMERIC(19,6) NOT NULL,
-      created_at       TIMESTAMPTZ   NOT NULL DEFAULT now(),
-      CONSTRAINT uq_currency_pair UNIQUE (base_currency, target_currency),
-      CONSTRAINT chk_base_cur3 CHECK (char_length(base_currency) = 3),
-      CONSTRAINT chk_target_cur3 CHECK (char_length(target_currency) = 3),
-      CONSTRAINT chk_rate_positive CHECK (rate > 0)
+      base_currency    VARCHAR(3)    NOT NULL,
+      currency         VARCHAR(3)    NOT NULL,
+      buy_rate         NUMERIC(20,4) NOT NULL,
+      sell_rate        NUMERIC(20,4) NOT NULL,
+      updated_at       TIMESTAMPTZ   NOT NULL DEFAULT now(),
+      CONSTRAINT uq_exchange_pair     UNIQUE (base_currency, currency),
+      CONSTRAINT chk_base_cur3        CHECK (char_length(base_currency) = 3),
+      CONSTRAINT chk_target_cur3      CHECK (char_length(currency) = 3),
+      CONSTRAINT chk_buy_positive     CHECK (buy_rate > 0),
+      CONSTRAINT chk_sell_positive    CHECK (sell_rate > 0)
     );
 
     CREATE TABLE transfer.transactions (
@@ -73,6 +75,7 @@ data:
       idempotency_key  VARCHAR(100) NOT NULL,
       created_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
       updated_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
+      version          BIGINT      NOT NULL DEFAULT 0,
       CONSTRAINT chk_transfer_amount    CHECK (amount > 0),
       CONSTRAINT chk_transfer_currency3 CHECK (char_length(currency) = 3),
       CONSTRAINT uq_transfer_idempotency UNIQUE (idempotency_key)
@@ -89,6 +92,8 @@ data:
       status           VARCHAR(20) NOT NULL DEFAULT 'PENDING',
       idempotency_key  VARCHAR(100) NOT NULL,
       created_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
+      updated_at       TIMESTAMPTZ NOT NULL DEFAULT now(),
+      version          BIGINT      NOT NULL DEFAULT 0,
       CONSTRAINT chk_cash_amount     CHECK (amount > 0),
       CONSTRAINT chk_cash_currency3  CHECK (char_length(currency) = 3),
       CONSTRAINT uq_cash_idempotency UNIQUE (idempotency_key)
@@ -116,15 +121,63 @@ data:
     );
     CREATE INDEX idx_messages_user ON notifications.messages(user_id);
 
-    INSERT INTO exchange.currency_rates (base_currency, target_currency, rate) VALUES
-      ('RUB','RUB',1.000000),
-      ('RUB','USD',0.011000),
-      ('RUB','CNY',0.079000),
-      ('USD','RUB',90.910000),
-      ('USD','CNY',7.180000),
-      ('CNY','RUB',12.660000),
-      ('CNY','USD',0.139000)
-    ON CONFLICT (base_currency, target_currency) DO NOTHING;
+    INSERT INTO exchange.exchange_rates (base_currency, currency, buy_rate, sell_rate)
+    VALUES ('RUB','RUB',1.0000,1.0000),
+           ('RUB','USD',0.0110,0.0110),
+           ('RUB','CNY',0.0790,0.0790),
+           ('USD','RUB',90.9100,90.9100),
+           ('USD','CNY',7.1800,7.1800),
+           ('CNY','RUB',12.6600,12.6600),
+           ('CNY','USD',0.1390,0.1390)
+    ON CONFLICT (base_currency, currency) DO NOTHING;
+
+    WITH upsert_bob AS (
+        INSERT INTO accounts.users (id, login, name, email, birthdate, kc_id, active, created_at, updated_at)
+        VALUES (gen_random_uuid(), 'bob', 'Bob Example', 'bob@example.com', DATE '1990-01-10', NULL, TRUE, now(), now())
+        ON CONFLICT (login) DO UPDATE
+            SET name = EXCLUDED.name,
+                email = EXCLUDED.email,
+                birthdate = EXCLUDED.birthdate,
+                active = TRUE,
+                updated_at = now()
+        RETURNING id
+    )
+    INSERT INTO accounts.bank_accounts (id, user_id, account_number, currency, balance, status, version, created_at, updated_at)
+    SELECT gen_random_uuid(), id, '40800000000000000001', 'RUB', 1500.00, 'ACTIVE', 0, now(), now()
+    FROM upsert_bob
+    ON CONFLICT (user_id, currency) DO UPDATE
+        SET balance = EXCLUDED.balance,
+            status = EXCLUDED.status,
+            updated_at = now();
+
+    WITH upsert_alice AS (
+        INSERT INTO accounts.users (id, login, name, email, birthdate, kc_id, active, created_at, updated_at)
+        VALUES (gen_random_uuid(), 'alice', 'Alice Example', 'alice@example.com', DATE '1992-05-15', NULL, TRUE, now(), now())
+        ON CONFLICT (login) DO UPDATE
+            SET name = EXCLUDED.name,
+                email = EXCLUDED.email,
+                birthdate = EXCLUDED.birthdate,
+                active = TRUE,
+                updated_at = now()
+        RETURNING id
+    )
+    INSERT INTO accounts.bank_accounts (id, user_id, account_number, currency, balance, status, version, created_at, updated_at)
+    SELECT gen_random_uuid(), id, '40800000000000000002', 'RUB', 750.00, 'ACTIVE', 0, now(), now()
+    FROM upsert_alice
+    ON CONFLICT (user_id, currency) DO UPDATE
+        SET balance = EXCLUDED.balance,
+            status = EXCLUDED.status,
+            updated_at = now();
+
+    INSERT INTO accounts.bank_accounts (id, user_id, account_number, currency, balance, status, version, created_at, updated_at)
+    SELECT gen_random_uuid(), id, '40800000000000000003', 'USD', 300.00, 'ACTIVE', 0, now(), now()
+    FROM accounts.users WHERE login = 'bob'
+    ON CONFLICT (user_id, currency) DO NOTHING;
+
+    INSERT INTO accounts.bank_accounts (id, user_id, account_number, currency, balance, status, version, created_at, updated_at)
+    SELECT gen_random_uuid(), id, '40800000000000000004', 'CNY', 500.00, 'ACTIVE', 0, now(), now()
+    FROM accounts.users WHERE login = 'alice'
+    ON CONFLICT (user_id, currency) DO NOTHING;
 
 ---
 apiVersion: batch/v1
