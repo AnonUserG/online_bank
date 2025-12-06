@@ -1,0 +1,31 @@
+controller:
+  replicaCount: 1
+  persistence:
+    enabled: true
+    size: 2Gi
+
+broker:
+  replicaCount: 0
+  persistence:
+    enabled: true
+    size: 2Gi
+
+listeners:
+  client:
+    protocol: PLAINTEXT
+  controller:
+    protocol: PLAINTEXT
+  interbroker:
+    protocol: PLAINTEXT
+
+auth:
+  clientProtocol: plaintext
+  interBrokerProtocol: plaintext
+  controllerProtocol: plaintext
+
+persistence:
+  enabled: true
+  size: 2Gi
+
+configurationOverrides:
+  auto.create.topics.enable: "true"

@@ -1,0 +1,63 @@
+pipeline {
+    agent any
+    options {
+        timestamps()
+        disableConcurrentBuilds()
+    }
+    parameters {
+        string(name: 'RELEASE_NAME', defaultValue: 'bank-kafka', description: 'Helm release name for Kafka')
+        string(name: 'K8S_NAMESPACE', defaultValue: 'default', description: 'Kubernetes namespace')
+        string(name: 'VALUES_FILE', defaultValue: 'deploy/helm/kafka/values-single-node.yaml', description: 'Helm values file for Kafka chart')
+        string(name: 'EXTRA_SET_FLAGS', defaultValue: 'configurationOverrides.auto.create.topics.enable=true', description: 'Additional --set flags (space-separated)')
+    }
+    environment {
+        KAFKA_CHART_DIR = 'deploy/helm/umbrella/charts'
+    }
+    stages {
+        stage('Checkout') {
+            steps { checkout scm }
+        }
+        stage('Select Chart') {
+            steps {
+                script {
+                    def chart = sh(
+                        script: "ls ${env.KAFKA_CHART_DIR}/kafka-*.tgz | sort | tail -n 1",
+                        returnStdout: true
+                    ).trim()
+                    if (!chart) {
+                        error "Kafka chart not found in ${env.KAFKA_CHART_DIR}"
+                    }
+                    env.KAFKA_CHART = chart
+                }
+            }
+        }
+        stage('Deploy / Upgrade Kafka') {
+            steps {
+                script {
+                    def valuesArg = params.VALUES_FILE?.trim() ? "-f ${params.VALUES_FILE.trim()}" : ""
+                    def extraSet = params.EXTRA_SET_FLAGS?.trim() ? params.EXTRA_SET_FLAGS.trim() : ""
+                    sh """
+                      helm upgrade --install ${params.RELEASE_NAME} ${env.KAFKA_CHART} \
+                        --namespace ${params.K8S_NAMESPACE} \
+                        --create-namespace \
+                        ${valuesArg} \
+                        --set controller.replicaCount=1 \
+                        --set broker.replicaCount=0 \
+                        --set auth.clientProtocol=plaintext \
+                        --set auth.interBrokerProtocol=plaintext \
+                        --set auth.controllerProtocol=plaintext \
+                        --set persistence.enabled=true \
+                        --set configurationOverrides."auto.create.topics.enable"=true \
+                        ${extraSet} \
+                        --wait --atomic
+                    """
+                }
+            }
+        }
+    }
+    post {
+        always {
+            sh "kubectl get pods -n ${params.K8S_NAMESPACE} --no-headers || true"
+        }
+    }
+}

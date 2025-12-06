@@ -12,6 +12,8 @@ pipeline {
         booleanParam(name: 'DEPLOY_PROD', defaultValue: false, description: 'Also deploy to prod namespace after test')
         string(name: 'K8S_NAMESPACE_TEST', defaultValue: 'default', description: 'Namespace for test deploy')
         string(name: 'K8S_NAMESPACE_PROD', defaultValue: 'default', description: 'Namespace for prod deploy')
+        booleanParam(name: 'ENABLE_KAFKA', defaultValue: true, description: 'Deploy Kafka dependency from umbrella chart')
+        string(name: 'KAFKA_VALUES_FILE', defaultValue: 'deploy/helm/kafka/values-single-node.yaml', description: 'Optional values file applied when ENABLE_KAFKA=true')
     }
     environment {
         RELEASE_NAME = 'bank'
@@ -96,9 +98,13 @@ pipeline {
                     def setFlags = services.collect { svc ->
                         "--set ${svc.name}.image.repository=${params.DOCKER_REGISTRY}/${svc.name} --set ${svc.name}.image.tag=${env.EFFECTIVE_IMAGE_TAG}"
                     }.join(" \\\n  ")
+                    def kafkaSet = "--set kafka.enabled=${params.ENABLE_KAFKA}"
+                    def kafkaValues = (params.ENABLE_KAFKA && params.KAFKA_VALUES_FILE?.trim()) ? "-f ${params.KAFKA_VALUES_FILE.trim()}" : ""
                     sh """
                       helm upgrade --install ${env.RELEASE_NAME} ${env.UMBRELLA_CHART} \
                         --namespace ${params.K8S_NAMESPACE_TEST} \
+                        ${kafkaValues} \
+                        ${kafkaSet} \
                         ${setFlags} \
                         --wait --atomic
                     """
@@ -114,9 +120,13 @@ pipeline {
                     def setFlags = services.collect { svc ->
                         "--set ${svc.name}.image.repository=${params.DOCKER_REGISTRY}/${svc.name} --set ${svc.name}.image.tag=${env.EFFECTIVE_IMAGE_TAG}"
                     }.join(" \\\n  ")
+                    def kafkaSet = "--set kafka.enabled=${params.ENABLE_KAFKA}"
+                    def kafkaValues = (params.ENABLE_KAFKA && params.KAFKA_VALUES_FILE?.trim()) ? "-f ${params.KAFKA_VALUES_FILE.trim()}" : ""
                     sh """
                       helm upgrade --install ${env.RELEASE_NAME} ${env.UMBRELLA_CHART} \
                         --namespace ${params.K8S_NAMESPACE_PROD} \
+                        ${kafkaValues} \
+                        ${kafkaSet} \
                         ${setFlags} \
                         --wait --atomic
                     """
