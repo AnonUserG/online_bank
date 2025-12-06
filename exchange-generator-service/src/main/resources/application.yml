@@ -4,10 +4,23 @@ server:
 spring:
   application:
     name: exchange-generator-service
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:bank-kafka:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      acks: ${KAFKA_PRODUCER_ACKS:0}
+      retries: ${KAFKA_PRODUCER_RETRIES:0}
+      properties:
+        enable.idempotence: false
+        max.in.flight.requests.per.connection: 1
+    properties:
+      spring.json.add.type.headers: false
 
 app:
-  exchange-base-url: ${EXCHANGE_BASE_URL:http://exchange-service:8086}
   exchange-generator:
     base-currency: ${BASE_CURRENCY:RUB}
     target-currencies: ${TARGET_CURRENCIES:USD,CNY}
     period-ms: ${GENERATION_PERIOD_MS:3000}
+  kafka:
+    rates-topic: ${KAFKA_RATES_TOPIC:fx-rates}

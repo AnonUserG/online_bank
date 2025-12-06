@@ -36,3 +36,7 @@ dependencies:
   - name: front-ui
     version: 0.1.0
     repository: "file://../front-ui"
+  - name: kafka
+    version: 26.6.1
+    repository: "https://charts.bitnami.com/bitnami"
+    condition: kafka.enabled

@@ -7,8 +7,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import ru.practicum.exchangegen.model.RatePayload;
-import ru.practicum.exchangegen.service.ExchangeClient;
 import ru.practicum.exchangegen.service.RateGeneratorService;
+import ru.practicum.exchangegen.service.RatesKafkaProducer;
 
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
@@ -22,14 +22,14 @@ import java.util.concurrent.atomic.AtomicReference;
 public class GeneratorController {
 
     private final RateGeneratorService generatorService;
-    private final ExchangeClient exchangeClient;
+    private final RatesKafkaProducer ratesKafkaProducer;
     private final AtomicReference<List<RatePayload>> lastRates = new AtomicReference<>(List.of());
 
     @PostMapping("/run")
     public ResponseEntity<List<RatePayload>> runNow() {
         List<RatePayload> rates = generatorService.generateRates();
         lastRates.set(rates);
-        exchangeClient.sendRates(rates);
+        ratesKafkaProducer.sendRates(rates);
         return ResponseEntity.ok(rates);
     }
 

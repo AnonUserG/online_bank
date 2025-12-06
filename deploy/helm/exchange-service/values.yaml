@@ -17,5 +17,8 @@ env:
   SPRING_DATASOURCE_USERNAME: bank
   SPRING_DATASOURCE_PASSWORD: bank123
   BASE_CURRENCY: RUB
+  KAFKA_BOOTSTRAP_SERVERS: "{{ printf \"%s-kafka:9092\" .Release.Name }}"
+  KAFKA_RATES_TOPIC: "fx-rates"
+  KAFKA_CONSUMER_GROUP: "exchange-service"
   SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: "{{ printf \"http://%s-keycloak:8080/realms/bank/protocol/openid-connect/certs\" .Release.Name }}"
   SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: "http://keycloak.127.0.0.1.nip.io/realms/bank"

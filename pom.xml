@@ -50,6 +50,7 @@
 		<module>exchange-generator-service</module>
 		<module>exchange-service</module>
 		<module>blocker-service</module>
+		<module>gateway</module>
 	</modules>
 
 	<dependencyManagement>

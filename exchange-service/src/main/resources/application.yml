@@ -4,6 +4,20 @@ server:
 spring:
   application:
     name: exchange-service
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:bank-kafka:9092}
+    consumer:
+      group-id: ${KAFKA_CONSUMER_GROUP:exchange-service}
+      auto-offset-reset: latest
+      enable-auto-commit: true
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
+      properties:
+        spring.json.value.default.type: ru.practicum.exchange.web.dto.RateRequest
+        spring.json.trusted.packages: ru.practicum.exchange.web.dto
+    listener:
+      type: single
+      ack-mode: record
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/bank}
     username: ${SPRING_DATASOURCE_USERNAME:bank}
@@ -19,6 +33,8 @@ spring:
 
 app:
   base-currency: ${BASE_CURRENCY:RUB}
+  kafka:
+    rates-topic: ${KAFKA_RATES_TOPIC:fx-rates}
 
 management:
   endpoints:

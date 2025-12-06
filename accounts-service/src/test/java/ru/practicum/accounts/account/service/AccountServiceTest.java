@@ -44,7 +44,7 @@ class AccountServiceTest {
         bankAccountRepository = org.mockito.Mockito.mock(BankAccountRepository.class);
         keycloakAdminClient = org.mockito.Mockito.mock(KeycloakAdminClient.class);
         notificationsClient = org.mockito.Mockito.mock(NotificationsClient.class);
-        service = new AccountService(repository, bankAccountRepository, Mappers.getMapper(AccountMapper.class), keycloakAdminClient, notificationsClient);
+        service = new AccountService(repository, bankAccountRepository, new AccountMapperImpl(), keycloakAdminClient, notificationsClient);
     }
 
     @Test

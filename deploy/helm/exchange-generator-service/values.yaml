@@ -13,7 +13,8 @@ resources: {}
 
 env:
   SERVER_PORT: "8087"
-  EXCHANGE_BASE_URL: "{{ printf \"http://%s-exchange-service:8086\" .Release.Name }}"
   BASE_CURRENCY: RUB
   TARGET_CURRENCIES: USD,CNY
   GENERATION_PERIOD_MS: "3000"
+  KAFKA_BOOTSTRAP_SERVERS: "{{ printf \"%s-kafka:9092\" .Release.Name }}"
+  KAFKA_RATES_TOPIC: "fx-rates"

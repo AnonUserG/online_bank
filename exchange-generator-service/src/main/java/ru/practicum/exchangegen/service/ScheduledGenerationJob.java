@@ -19,7 +19,7 @@ import java.util.concurrent.atomic.AtomicReference;
 public class ScheduledGenerationJob {
 
     private final RateGeneratorService generatorService;
-    private final ExchangeClient exchangeClient;
+    private final RatesKafkaProducer ratesKafkaProducer;
     private final ExchangeGeneratorProperties properties;
     private final AtomicReference<List<RatePayload>> lastRates = new AtomicReference<>(List.of());
 
@@ -27,8 +27,9 @@ public class ScheduledGenerationJob {
     public void generateAndPush() {
         List<RatePayload> rates = generatorService.generateRates();
         lastRates.set(rates);
-        exchangeClient.sendRates(rates);
-        log.debug("Generated {} rates", rates.size());
+        log.info("Отправлены обновленные курсы валют, количество записей={}", rates.size());
+        ratesKafkaProducer.sendRates(rates);
+        log.debug("Generated {} rates and sent to Kafka topic", rates.size());
     }
 
     /**

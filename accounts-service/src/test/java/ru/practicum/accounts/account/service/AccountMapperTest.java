@@ -17,7 +17,7 @@ class AccountMapperTest {
 
     @BeforeEach
     void setUp() {
-        mapper = Mappers.getMapper(AccountMapper.class);
+        mapper = new AccountMapperImpl();
     }
 
     @Test

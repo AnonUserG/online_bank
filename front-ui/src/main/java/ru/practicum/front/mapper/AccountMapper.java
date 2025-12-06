@@ -1,11 +1,11 @@
 package ru.practicum.front.mapper;
 
-import org.mapstruct.Mapper;
 import ru.practicum.front.service.Dto;
 import ru.practicum.front.service.dto.AccountResponse;
 
-/** Преобразование ответов backend-сервисов в view-DTO. */
-@Mapper(componentModel = "spring")
+/**
+ * Маппинг ответов backend в DTO для UI.
+ */
 public interface AccountMapper {
 
     Dto.UserProfile toUserProfile(AccountResponse response);
