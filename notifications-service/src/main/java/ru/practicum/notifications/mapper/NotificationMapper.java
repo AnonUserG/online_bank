@@ -1,10 +1,8 @@
 package ru.practicum.notifications.mapper;
 
-import java.time.OffsetDateTime;
-import java.util.UUID;
 import org.springframework.stereotype.Component;
+import ru.practicum.notifications.kafka.NotificationEvent;
 import ru.practicum.notifications.model.NotificationMessage;
-import ru.practicum.notifications.web.dto.NotificationEventRequest;
 
 /**
  * Конвертация запросов в доменную модель уведомлений.
@@ -12,16 +10,18 @@ import ru.practicum.notifications.web.dto.NotificationEventRequest;
 @Component
 public class NotificationMapper {
 
-    public NotificationMessage toMessage(NotificationEventRequest request) {
-        if (request == null) {
+    public NotificationMessage toMessage(NotificationEvent event) {
+        if (event == null) {
             return null;
         }
+        var createdAt = event.createdAt() == null ? java.time.OffsetDateTime.now() : event.createdAt();
         return NotificationMessage.builder()
-                .id(UUID.randomUUID())
-                .type(request.type())
-                .recipient(request.recipient())
-                .message(request.message())
-                .createdAt(OffsetDateTime.now())
+                .eventId(event.eventId())
+                .userId(event.userId())
+                .type(event.type())
+                .title(event.title())
+                .content(event.content())
+                .createdAt(createdAt)
                 .build();
     }
 }

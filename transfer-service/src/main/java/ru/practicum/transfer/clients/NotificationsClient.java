@@ -2,15 +2,13 @@ package ru.practicum.transfer.clients;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.MediaType;
-import org.springframework.http.client.SimpleClientHttpRequestFactory;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
-import org.springframework.web.client.RestClient;
-import org.springframework.web.client.RestClientException;
+import ru.practicum.transfer.notifications.NotificationEvent;
 
 import java.math.BigDecimal;
-import java.time.Duration;
-import java.util.Map;
+import java.time.OffsetDateTime;
+import java.util.UUID;
 
 /**
  * HTTP-клиент сервиса уведомлений.
@@ -19,18 +17,15 @@ import java.util.Map;
 @Slf4j
 public class NotificationsClient {
 
-    private final RestClient restClient;
+    private final KafkaTemplate<String, NotificationEvent> kafkaTemplate;
+    private final String notificationsTopic;
     private final boolean enabled;
 
-    public NotificationsClient(@Value("${notifications.base-url:http://notifications-service:8084}") String baseUrl,
+    public NotificationsClient(KafkaTemplate<String, NotificationEvent> kafkaTemplate,
+                               @Value("${notifications.topic:${KAFKA_NOTIFICATIONS_TOPIC:notifications}}") String notificationsTopic,
                                @Value("${notifications.enabled:true}") boolean enabled) {
-        var factory = new SimpleClientHttpRequestFactory();
-        factory.setConnectTimeout(Duration.ofMillis(500));
-        factory.setReadTimeout(Duration.ofMillis(1500));
-        this.restClient = RestClient.builder()
-                .requestFactory(factory)
-                .baseUrl(baseUrl)
-                .build();
+        this.kafkaTemplate = kafkaTemplate;
+        this.notificationsTopic = notificationsTopic;
         this.enabled = enabled;
     }
 
@@ -48,19 +43,19 @@ public class NotificationsClient {
         if (!enabled) {
             return;
         }
-        try {
-            restClient.post()
-                    .uri("/api/notifications/events")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .body(Map.of(
-                            "type", type,
-                            "recipient", login,
-                            "message", message
-                    ))
-                    .retrieve()
-                    .toBodilessEntity();
-        } catch (RestClientException ex) {
-            log.warn("Notifications service unavailable: {}", ex.getMessage());
-        }
+        NotificationEvent event = NotificationEvent.builder()
+                .eventId(UUID.randomUUID())
+                .userId(login)
+                .type(type)
+                .title(message)
+                .content(message)
+                .createdAt(OffsetDateTime.now())
+                .build();
+        kafkaTemplate.send(notificationsTopic, login, event)
+                .whenComplete((result, ex) -> {
+                    if (ex != null) {
+                        log.warn("Failed to send notification event type={} userId={}: {}", type, login, ex.getMessage());
+                    }
+                });
     }
 }

@@ -12,9 +12,10 @@ import java.util.UUID;
 @Data
 @Builder
 public class NotificationMessage {
-    private UUID id;
+    private UUID eventId;
+    private String userId;
     private String type;
-    private String recipient;
-    private String message;
+    private String title;
+    private String content;
     private OffsetDateTime createdAt;
 }

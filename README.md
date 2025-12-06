@@ -27,8 +27,8 @@ docker build --no-cache -t bank/blocker-service:latest              blocker-serv
 docker build --no-cache -t bank/exchange-service:latest             exchange-service
 docker build --no-cache -t bank/exchange-generator-service:latest   exchange-generator-service
 docker build --no-cache -t bank/front-ui:latest                     front-ui
-
 kubectl apply -f deploy/k8s/kafka-standalone.yaml
+
 
 # 4) Готовим зависимости чарта и деплоим с nip.io
 helm dependency update deploy/helm/umbrella
@@ -38,11 +38,10 @@ kubectl rollout restart deploy/bank-exchange-generator-service
 kubectl rollout restart deploy/bank-exchange-service
 
 # 5) Ждём готовности
-kubectl get pods (опционально -w)
+kubectl get pods
 
 # 6) Заливаем данные в Postgres (job использует тот же SQL, что и init-db/01-init-schemas.sql)
 kubectl apply -f deploy/k8s/init-db-job.yaml
-kubectl logs job/bank-init-db
 
 # 7) Тоннель для ingress/LoadBalancer в отдельном окне
 minikube tunnel
@@ -65,7 +64,9 @@ kubectl exec $POD -- bash -c "/opt/keycloak/bin/kcadm.sh config credentials --se
 логин= bob
 пароль= password
 
-
+# 11) Почистить все
+minikube stop
+minikube delete
 
 # CI/CD с Jenkins
 

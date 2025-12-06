@@ -4,8 +4,19 @@ server:
 spring:
   application:
     name: notifications-service
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:bank-kafka:9092}
+    consumer:
+      group-id: ${KAFKA_CONSUMER_GROUP:notifications-service}
+      auto-offset-reset: latest
+    listener:
+      ack-mode: record
 management:
   endpoints:
     web:
       exposure:
         include: health, info, refresh
+
+app:
+  kafka:
+    notifications-topic: ${KAFKA_NOTIFICATIONS_TOPIC:notifications}

@@ -3,6 +3,7 @@ package ru.practicum.notifications.web;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -13,8 +14,6 @@ import java.util.Map;
 import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 
 @WebMvcTest(NotificationController.class)
 @AutoConfigureMockMvc(addFilters = false)
@@ -32,9 +31,10 @@ class NotificationControllerTest {
     @Test
     void acceptsValidEvent() throws Exception {
         Map<String, Object> payload = Map.of(
+                "userId", "alice",
                 "type", "PASSWORD_CHANGED",
-                "recipient", "alice",
-                "message", "Пароль изменен"
+                "title", "Пароль обновлен",
+                "content", "Пароль успешно изменен"
         );
 
         mockMvc.perform(post("/api/notifications/events")
@@ -49,7 +49,7 @@ class NotificationControllerTest {
     void rejectsInvalidEvent() throws Exception {
         mockMvc.perform(post("/api/notifications/events")
                         .contentType("application/json")
-                        .content(objectMapper.writeValueAsBytes(Map.of("type", "", "recipient", "", "message", ""))))
+                        .content(objectMapper.writeValueAsBytes(Map.of("type", "", "userId", "", "title", "", "content", ""))))
                 .andExpect(status().isBadRequest());
     }
 }

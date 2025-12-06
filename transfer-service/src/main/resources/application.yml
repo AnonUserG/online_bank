@@ -4,6 +4,14 @@ server:
 spring:
   application:
     name: transfer-service
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:bank-kafka:9092}
+    producer:
+      acks: all
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+      properties:
+        spring.json.add.type.headers: false
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/bank}
     username: ${SPRING_DATASOURCE_USERNAME:bank}
@@ -18,6 +26,9 @@ spring:
     open-in-view: false
 app:
   blocker-base-url: ${BLOCKER_BASE_URL:http://blocker-service:8088}
+notifications:
+  topic: ${KAFKA_NOTIFICATIONS_TOPIC:notifications}
+  enabled: ${NOTIFICATIONS_ENABLED:true}
 management:
   endpoints:
     web:

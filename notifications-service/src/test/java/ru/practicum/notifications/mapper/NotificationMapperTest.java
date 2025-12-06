@@ -3,9 +3,10 @@ package ru.practicum.notifications.mapper;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.OffsetDateTime;
+import java.util.UUID;
 import org.junit.jupiter.api.Test;
+import ru.practicum.notifications.kafka.NotificationEvent;
 import ru.practicum.notifications.model.NotificationMessage;
-import ru.practicum.notifications.web.dto.NotificationEventRequest;
 
 class NotificationMapperTest {
 
@@ -13,14 +14,22 @@ class NotificationMapperTest {
 
     @Test
     void toMessageCopiesFieldsAndGeneratesIds() {
-        NotificationEventRequest request = new NotificationEventRequest("ACCOUNT", "bob", "Hello");
+        NotificationEvent event = NotificationEvent.builder()
+                .eventId(UUID.randomUUID())
+                .userId("bob")
+                .type("ACCOUNT")
+                .title("Hello")
+                .content("Sample")
+                .createdAt(OffsetDateTime.now())
+                .build();
 
-        NotificationMessage message = mapper.toMessage(request);
+        NotificationMessage message = mapper.toMessage(event);
 
-        assertThat(message.getId()).isNotNull();
+        assertThat(message.getEventId()).isEqualTo(event.eventId());
         assertThat(message.getCreatedAt()).isBeforeOrEqualTo(OffsetDateTime.now());
         assertThat(message.getType()).isEqualTo("ACCOUNT");
-        assertThat(message.getRecipient()).isEqualTo("bob");
-        assertThat(message.getMessage()).isEqualTo("Hello");
+        assertThat(message.getUserId()).isEqualTo("bob");
+        assertThat(message.getTitle()).isEqualTo("Hello");
+        assertThat(message.getContent()).isEqualTo("Sample");
     }
 }

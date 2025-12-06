@@ -15,3 +15,6 @@ env:
   SERVER_PORT: "8084"
   SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: "{{ printf \"http://%s-keycloak:8080/realms/bank/protocol/openid-connect/certs\" .Release.Name }}"
   SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: "http://keycloak.127.0.0.1.nip.io/realms/bank"
+  KAFKA_BOOTSTRAP_SERVERS: "{{ printf \"%s-kafka:9092\" .Release.Name }}"
+  KAFKA_NOTIFICATIONS_TOPIC: "notifications"
+  KAFKA_CONSUMER_GROUP: "{{ printf \"%s-notifications-service\" .Release.Name }}"

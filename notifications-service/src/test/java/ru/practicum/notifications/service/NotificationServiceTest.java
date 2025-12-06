@@ -5,14 +5,13 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.time.OffsetDateTime;
-import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import ru.practicum.notifications.kafka.NotificationEvent;
 import ru.practicum.notifications.mapper.NotificationMapper;
 import ru.practicum.notifications.model.NotificationMessage;
-import ru.practicum.notifications.web.dto.NotificationEventRequest;
 
 class NotificationServiceTest {
 
@@ -29,17 +28,25 @@ class NotificationServiceTest {
 
     @Test
     void acceptDelegatesToMapper() {
-        NotificationEventRequest request = new NotificationEventRequest("TYPE", "user", "text");
-        NotificationMessage message = NotificationMessage.builder()
-                .id(UUID.randomUUID())
+        NotificationEvent event = NotificationEvent.builder()
+                .eventId(java.util.UUID.randomUUID())
+                .userId("user")
                 .type("TYPE")
-                .recipient("user")
-                .message("text")
+                .title("title")
+                .content("text")
                 .createdAt(OffsetDateTime.now())
                 .build();
-        when(mapper.toMessage(request)).thenReturn(message);
+        NotificationMessage message = NotificationMessage.builder()
+                .eventId(event.eventId())
+                .type("TYPE")
+                .userId("user")
+                .title("title")
+                .content("text")
+                .createdAt(OffsetDateTime.now())
+                .build();
+        when(mapper.toMessage(event)).thenReturn(message);
 
-        assertThatCode(() -> service.accept(request)).doesNotThrowAnyException();
-        verify(mapper).toMessage(request);
+        assertThatCode(() -> service.accept(event)).doesNotThrowAnyException();
+        verify(mapper).toMessage(event);
     }
 }
