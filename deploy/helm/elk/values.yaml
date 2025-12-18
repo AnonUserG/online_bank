@@ -1,0 +1,32 @@
+elasticsearch:
+  image: docker.elastic.co/elasticsearch/elasticsearch
+  tag: "8.15.3"
+  pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 9200
+  resources: {}
+
+logstash:
+  image: docker.elastic.co/logstash/logstash
+  tag: "8.15.3"
+  pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 5044
+  kafkaBootstrap: "bank-kafka:9092"
+  topic: "service-logs"
+  resources: {}
+
+kibana:
+  image: docker.elastic.co/kibana/kibana
+  tag: "8.15.3"
+  pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 5601
+  resources: {}
+
+nodeSelector: {}
+tolerations: []
+affinity: {}

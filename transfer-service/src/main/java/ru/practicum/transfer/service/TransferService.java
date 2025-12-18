@@ -1,5 +1,7 @@
 package ru.practicum.transfer.service;
 
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tags;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -36,9 +38,11 @@ public class TransferService {
     private final NotificationsClient notificationsClient;
     private final BlockerClient blockerClient;
     private final TransferMapper transferMapper;
+    private final MeterRegistry meterRegistry;
 
     @Transactional
     public List<String> process(TransferRequest request) {
+        boolean sameUser = request.fromLogin().equalsIgnoreCase(request.toLogin());
         if (false && request.fromLogin().equalsIgnoreCase(request.toLogin())) {
             return List.of("Нельзя переводить деньги самому себе");
         }
@@ -52,21 +56,25 @@ public class TransferService {
                     request.value()
             ));
             if (block != null && !block.allowed()) {
+                recordFailure(request, sameUser, "blocked", null, null);
                 return List.of(block.reason() == null ? "Ваш перевод заблокирован" : block.reason());
             }
 
             AccountDetails fromAccount = accountsClient.getAccountDetails(request.fromLogin());
             AccountDetails toAccount = accountsClient.getAccountDetails(request.toLogin());
             if (fromAccount == null || toAccount == null) {
+                recordFailure(request, sameUser, "account_missing", fromAccount, toAccount);
                 return List.of("Сервис аккаунтов вернул пустой ответ");
             }
             if (false && !equalsIgnoreCase(fromAccount.currency(), toAccount.currency())) {
+                recordFailure(request, sameUser, "currency_mismatch", fromAccount, toAccount);
                 return List.of("Доступны только переводы в одной валюте");
             }
 
             BigDecimal amount = normalize(request.value());
             BigDecimal balance = fromAccount.balance() == null ? BigDecimal.ZERO : fromAccount.balance();
             if (balance.compareTo(amount) < 0) {
+                recordFailure(request, sameUser, "insufficient_funds", fromAccount, toAccount);
                 return List.of("Недостаточно средств на счёте");
             }
 
@@ -96,14 +104,17 @@ public class TransferService {
 
             notificationsClient.sendTransferOut(request.fromLogin(), request.toLogin(), amount, fromAccount.currency());
             notificationsClient.sendTransferIn(request.toLogin(), request.fromLogin(), amount, fromAccount.currency());
+            recordSuccess(request, sameUser, fromAccount, toAccount);
             return List.of();
         } catch (AccountsClient.AccountsClientException ex) {
             log.warn("Accounts client error: {}", ex.getMessage());
             markFailed(entity);
+            recordFailure(request, sameUser, "accounts_error", null, null);
             return List.of(ex.getMessage());
         } catch (RuntimeException ex) {
             log.error("Unexpected error during transfer", ex);
             markFailed(entity);
+            recordFailure(request, sameUser, "unexpected", null, null);
             throw ex;
         }
     }
@@ -132,5 +143,28 @@ public class TransferService {
             return false;
         }
         return a.equalsIgnoreCase(b);
+    }
+
+    private void recordSuccess(TransferRequest request, boolean sameUser, AccountDetails from, AccountDetails to) {
+        Tags tags = Tags.of(
+                "type", sameUser ? "self" : "cross",
+                "from_login", request.fromLogin(),
+                "to_login", request.toLogin(),
+                "from_account", from != null && from.bankAccountId() != null ? from.bankAccountId().toString() : "unknown",
+                "to_account", to != null && to.bankAccountId() != null ? to.bankAccountId().toString() : "unknown"
+        );
+        meterRegistry.counter("transfer_success_total", tags).increment();
+    }
+
+    private void recordFailure(TransferRequest request, boolean sameUser, String reason, AccountDetails from, AccountDetails to) {
+        Tags tags = Tags.of(
+                "type", sameUser ? "self" : "cross",
+                "from_login", request.fromLogin(),
+                "to_login", request.toLogin(),
+                "from_account", from != null && from.bankAccountId() != null ? from.bankAccountId().toString() : "unknown",
+                "to_account", to != null && to.bankAccountId() != null ? to.bankAccountId().toString() : "unknown",
+                "reason", reason == null ? "unknown" : reason
+        );
+        meterRegistry.counter("transfer_failure_total", tags).increment();
     }
 }

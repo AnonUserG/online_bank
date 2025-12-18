@@ -3,6 +3,7 @@ package ru.practicum.transfer.service;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import ru.practicum.transfer.clients.AccountsClient;
 import ru.practicum.transfer.clients.NotificationsClient;
 import ru.practicum.transfer.clients.BlockerClient;
@@ -31,6 +32,7 @@ class TransferServiceTest {
     private NotificationsClient notificationsClient;
     private BlockerClient blockerClient;
     private TransferService service;
+    private SimpleMeterRegistry meterRegistry;
 
     @BeforeEach
     void setUp() {
@@ -38,8 +40,9 @@ class TransferServiceTest {
         accountsClient = mock(AccountsClient.class);
         notificationsClient = mock(NotificationsClient.class);
         blockerClient = mock(BlockerClient.class);
+        meterRegistry = new SimpleMeterRegistry();
         TransferMapper mapper = new TransferMapperImpl();
-        service = new TransferService(repository, accountsClient, notificationsClient, blockerClient, mapper);
+        service = new TransferService(repository, accountsClient, notificationsClient, blockerClient, mapper, meterRegistry);
 
         when(repository.save(any(TransferEntity.class))).thenAnswer(inv -> inv.getArgument(0));
         when(blockerClient.check(any())).thenReturn(new BlockCheckResponse(true, null));

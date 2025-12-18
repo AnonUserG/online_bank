@@ -14,10 +14,18 @@ pipeline {
         string(name: 'K8S_NAMESPACE_PROD', defaultValue: 'default', description: 'Namespace for prod deploy')
         booleanParam(name: 'ENABLE_KAFKA', defaultValue: true, description: 'Deploy Kafka dependency from umbrella chart')
         string(name: 'KAFKA_VALUES_FILE', defaultValue: 'deploy/helm/kafka/values-single-node.yaml', description: 'Optional values file applied when ENABLE_KAFKA=true')
+        booleanParam(name: 'DEPLOY_ZIPKIN', defaultValue: true, description: 'Deploy Zipkin')
+        booleanParam(name: 'DEPLOY_PROMETHEUS', defaultValue: true, description: 'Deploy Prometheus')
+        booleanParam(name: 'DEPLOY_GRAFANA', defaultValue: true, description: 'Deploy Grafana')
+        booleanParam(name: 'DEPLOY_ELK', defaultValue: true, description: 'Deploy Elasticsearch/Logstash/Kibana')
     }
     environment {
         RELEASE_NAME = 'bank'
         UMBRELLA_CHART = 'deploy/helm/umbrella'
+        ZIPKIN_CHART = 'deploy/helm/zipkin'
+        PROM_CHART = 'deploy/helm/prometheus'
+        GRAFANA_CHART = 'deploy/helm/grafana'
+        ELK_CHART = 'deploy/helm/elk'
     }
     stages {
         stage('Checkout') {
@@ -91,6 +99,24 @@ pipeline {
                 sh "helm dependency update ${env.UMBRELLA_CHART}"
             }
         }
+        stage('Deploy Observability') {
+            steps {
+                script {
+                    if (params.DEPLOY_ZIPKIN) {
+                        sh "helm upgrade --install ${env.RELEASE_NAME}-zipkin ${env.ZIPKIN_CHART} --namespace ${params.K8S_NAMESPACE_TEST} --wait --timeout 3m"
+                    }
+                    if (params.DEPLOY_PROMETHEUS) {
+                        sh "helm upgrade --install ${env.RELEASE_NAME}-prometheus ${env.PROM_CHART} --namespace ${params.K8S_NAMESPACE_TEST} --wait --timeout 3m"
+                    }
+                    if (params.DEPLOY_GRAFANA) {
+                        sh "helm upgrade --install ${env.RELEASE_NAME}-grafana ${env.GRAFANA_CHART} --namespace ${params.K8S_NAMESPACE_TEST} --wait --timeout 3m"
+                    }
+                    if (params.DEPLOY_ELK) {
+                        sh "helm upgrade --install ${env.RELEASE_NAME}-elk ${env.ELK_CHART} --namespace ${params.K8S_NAMESPACE_TEST} --wait --timeout 5m"
+                    }
+                }
+            }
+        }
         stage('Deploy Test') {
             steps {
                 script {
@@ -122,6 +148,18 @@ pipeline {
                     }.join(" \\\n  ")
                     def kafkaSet = "--set kafka.enabled=${params.ENABLE_KAFKA}"
                     def kafkaValues = (params.ENABLE_KAFKA && params.KAFKA_VALUES_FILE?.trim()) ? "-f ${params.KAFKA_VALUES_FILE.trim()}" : ""
+                    if (params.DEPLOY_ZIPKIN) {
+                        sh "helm upgrade --install ${env.RELEASE_NAME}-zipkin ${env.ZIPKIN_CHART} --namespace ${params.K8S_NAMESPACE_PROD} --wait --timeout 3m"
+                    }
+                    if (params.DEPLOY_PROMETHEUS) {
+                        sh "helm upgrade --install ${env.RELEASE_NAME}-prometheus ${env.PROM_CHART} --namespace ${params.K8S_NAMESPACE_PROD} --wait --timeout 3m"
+                    }
+                    if (params.DEPLOY_GRAFANA) {
+                        sh "helm upgrade --install ${env.RELEASE_NAME}-grafana ${env.GRAFANA_CHART} --namespace ${params.K8S_NAMESPACE_PROD} --wait --timeout 3m"
+                    }
+                    if (params.DEPLOY_ELK) {
+                        sh "helm upgrade --install ${env.RELEASE_NAME}-elk ${env.ELK_CHART} --namespace ${params.K8S_NAMESPACE_PROD} --wait --timeout 5m"
+                    }
                     sh """
                       helm upgrade --install ${env.RELEASE_NAME} ${env.UMBRELLA_CHART} \
                         --namespace ${params.K8S_NAMESPACE_PROD} \

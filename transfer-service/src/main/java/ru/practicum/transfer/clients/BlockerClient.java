@@ -15,8 +15,9 @@ public class BlockerClient {
 
     private final RestClient client;
 
-    public BlockerClient(@Value("${app.blocker-base-url:http://blocker-service:8088}") String baseUrl) {
-        this.client = RestClient.builder()
+    public BlockerClient(@Value("${app.blocker-base-url:http://blocker-service:8088}") String baseUrl,
+                         RestClient.Builder restClientBuilder) {
+        this.client = restClientBuilder
                 .baseUrl(baseUrl)
                 .build();
     }

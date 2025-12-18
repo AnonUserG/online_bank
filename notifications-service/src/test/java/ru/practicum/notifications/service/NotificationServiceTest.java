@@ -9,6 +9,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import ru.practicum.notifications.kafka.NotificationEvent;
 import ru.practicum.notifications.mapper.NotificationMapper;
 import ru.practicum.notifications.model.NotificationMessage;
@@ -19,11 +20,13 @@ class NotificationServiceTest {
     private NotificationMapper mapper;
 
     private NotificationService service;
+    private SimpleMeterRegistry meterRegistry;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        service = new NotificationService(mapper);
+        meterRegistry = new SimpleMeterRegistry();
+        service = new NotificationService(mapper, meterRegistry);
     }
 
     @Test

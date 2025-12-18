@@ -18,3 +18,7 @@ env:
   KAFKA_BOOTSTRAP_SERVERS: "{{ printf \"%s-kafka:9092\" .Release.Name }}"
   KAFKA_NOTIFICATIONS_TOPIC: "notifications"
   KAFKA_CONSUMER_GROUP: "{{ printf \"%s-notifications-service\" .Release.Name }}"
+  ZIPKIN_ENDPOINT: "http://bank-zipkin:9411/api/v2/spans"
+  LOGS_KAFKA_BOOTSTRAP_SERVERS: "{{ printf \"%s-kafka:9092\" .Release.Name }}"
+  LOGS_TOPIC: "service-logs"
+  LOGS_KAFKA_ENABLED: "true"

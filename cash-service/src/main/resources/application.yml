@@ -12,6 +12,7 @@ spring:
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
       properties:
         spring.json.add.type.headers: false
+      observation-enabled: true
   datasource:
     url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/bank}
     username: ${SPRING_DATASOURCE_USERNAME:bank}
@@ -29,7 +30,21 @@ notifications:
   topic: ${KAFKA_NOTIFICATIONS_TOPIC:notifications}
   enabled: ${NOTIFICATIONS_ENABLED:true}
 management:
+  tracing:
+    sampling:
+      probability: 1.0
+    propagation:
+      type: b3
+  zipkin:
+    tracing:
+      endpoint: ${ZIPKIN_ENDPOINT:http://zipkin:9411/api/v2/spans}
+  metrics:
+    tags:
+      application: ${spring.application.name}
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
   endpoints:
     web:
       exposure:
-        include: health, info, refresh
+        include: health, info, refresh, prometheus

@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "elk.fullname" . }}-kibana
+  labels:
+    {{- include "elk.labels" . | nindent 4 }}
+    app.kubernetes.io/component: kibana
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "elk.name" . }}-kibana
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        {{- include "elk.labels" . | nindent 8 }}
+        app.kubernetes.io/name: {{ include "elk.name" . }}-kibana
+        app.kubernetes.io/component: kibana
+    spec:
+      containers:
+        - name: kibana
+          image: "{{ .Values.kibana.image }}:{{ .Values.kibana.tag }}"
+          imagePullPolicy: {{ .Values.kibana.pullPolicy }}
+          env:
+            - name: ELASTICSEARCH_HOSTS
+              value: "http://{{ include "elk.fullname" . }}-elasticsearch:{{ .Values.elasticsearch.service.port }}"
+          ports:
+            - containerPort: 5601
+              name: http
+          resources:
+            {{- toYaml .Values.kibana.resources | nindent 12 }}
+      nodeSelector:
+        {{- toYaml .Values.nodeSelector | nindent 8 }}
+      affinity:
+        {{- toYaml .Values.affinity | nindent 8 }}
+      tolerations:
+        {{- toYaml .Values.tolerations | nindent 8 }}

@@ -1,0 +1,97 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "grafana.fullname" . }}-dashboard-config
+  labels:
+    {{- include "grafana.labels" . | nindent 4 }}
+data:
+  dashboards.yaml: |
+    apiVersion: 1
+    providers:
+      - name: 'bank-dashboards'
+        orgId: 1
+        folder: 'Bank'
+        type: file
+        disableDeletion: false
+        editable: true
+        options:
+          path: /var/lib/grafana/dashboards
+  bank-dashboard.json: |
+    {
+      "id": null,
+      "uid": "bank-main",
+      "title": "Bank Observability",
+      "tags": ["bank"],
+      "timezone": "browser",
+      "schemaVersion": 38,
+      "version": 1,
+      "refresh": "10s",
+      "panels": [
+        {
+          "type": "timeseries",
+          "title": "HTTP 5xx per service",
+          "targets": [
+            {
+              "expr": "sum by(application)(rate(http_server_requests_seconds_count{outcome=\"SERVER_ERROR\"}[5m]))",
+              "refId": "A"
+            }
+          ],
+          "gridPos": {"h":8,"w":12,"x":0,"y":0}
+        },
+        {
+          "type": "timeseries",
+          "title": "JVM memory used",
+          "targets": [
+            {
+              "expr": "sum by(application)(jvm_memory_used_bytes{area=\"heap\"})",
+              "refId": "B"
+            }
+          ],
+          "gridPos": {"h":8,"w":12,"x":12,"y":0}
+        },
+        {
+          "type": "timeseries",
+          "title": "Failed transfers",
+          "targets": [
+            {
+              "expr": "sum by(type)(rate(transfer_failure_total[5m]))",
+              "refId": "C"
+            }
+          ],
+          "gridPos": {"h":8,"w":12,"x":0,"y":8}
+        },
+        {
+          "type": "timeseries",
+          "title": "Blocked operations",
+          "targets": [
+            {
+              "expr": "sum(rate(blocker_blocked_total[5m]))",
+              "refId": "D"
+            }
+          ],
+          "gridPos": {"h":8,"w":12,"x":12,"y":8}
+        },
+        {
+          "type": "timeseries",
+          "title": "Notification failures",
+          "targets": [
+            {
+              "expr": "sum by(login)(rate(notifications_processed_total{outcome=\"failure\"}[5m]))",
+              "refId": "E"
+            }
+          ],
+          "gridPos": {"h":8,"w":12,"x":0,"y":16}
+        },
+        {
+          "type": "timeseries",
+          "title": "Seconds since last FX update",
+          "targets": [
+            {
+              "expr": "max(exchange_rates_seconds_since_update)",
+              "refId": "F"
+            }
+          ],
+          "gridPos": {"h":8,"w":12,"x":12,"y":16}
+        }
+      ]
+    }

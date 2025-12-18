@@ -1,0 +1,51 @@
+<configuration>
+    <springProperty scope="context" name="SERVICE_NAME" source="spring.application.name" defaultValue="cash-service"/>
+    <springProperty scope="context" name="LOGS_KAFKA_ENABLED" source="LOGS_KAFKA_ENABLED" defaultValue="false"/>
+    <property name="LOGS_TOPIC" value="${LOGS_TOPIC:-service-logs}"/>
+    <property name="KAFKA_BOOTSTRAP" value="${LOGS_KAFKA_BOOTSTRAP_SERVERS:-bank-kafka:9092}"/>
+    <property name="CONSOLE_LOG_PATTERN"
+              value="%d{yyyy-MM-dd HH:mm:ss.SSS} %5p [%t] %logger{36} trace=%X{traceId:-} span=%X{spanId:-} - %msg%n"/>
+
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>${CONSOLE_LOG_PATTERN}</pattern>
+        </encoder>
+    </appender>
+
+    <if condition='property("LOGS_KAFKA_ENABLED").equalsIgnoreCase("true")'>
+        <then>
+            <appender name="KAFKA" class="io.github.bullettooth.logback.kafka.KafkaAppender">
+                <topic>${LOGS_TOPIC}</topic>
+                <producerConfig>bootstrap.servers=${KAFKA_BOOTSTRAP}</producerConfig>
+                <producerConfig>linger.ms=100</producerConfig>
+                <producerConfig>acks=1</producerConfig>
+                <producerConfig>retries=0</producerConfig>
+                <producerConfig>max.block.ms=2000</producerConfig>
+                <producerConfig>request.timeout.ms=2000</producerConfig>
+                <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
+                    <providers>
+                        <timestamp/>
+                        <pattern>
+                            <pattern>{"service":"${SERVICE_NAME}","level":"%level","logger":"%logger{36}","thread":"%thread","traceId":"%X{traceId:-}","spanId":"%X{spanId:-}"}</pattern>
+                        </pattern>
+                        <message/>
+                        <mdc/>
+                        <arguments/>
+                        <stackTrace/>
+                    </providers>
+                </encoder>
+            </appender>
+        </then>
+    </if>
+
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+        <if condition='property("LOGS_KAFKA_ENABLED").equalsIgnoreCase("true")'>
+            <then>
+                <appender-ref ref="KAFKA"/>
+            </then>
+        </if>
+    </root>
+</configuration>

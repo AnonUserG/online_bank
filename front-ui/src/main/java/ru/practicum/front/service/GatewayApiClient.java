@@ -31,11 +31,12 @@ public class GatewayApiClient {
     public GatewayApiClient(@Value("${app.accounts-base-url}") String accountsBaseUrl,
                             @Value("${app.cash-base-url}") String cashBaseUrl,
                             @Value("${app.transfer-base-url}") String transferBaseUrl,
-                            @Value("${app.exchange-base-url}") String exchangeBaseUrl) {
-        this.accountsClient = RestClient.builder().baseUrl(accountsBaseUrl).build();
-        this.cashClient = RestClient.builder().baseUrl(cashBaseUrl).build();
-        this.transferClient = RestClient.builder().baseUrl(transferBaseUrl).build();
-        this.exchangeClient = RestClient.builder().baseUrl(exchangeBaseUrl).build();
+                            @Value("${app.exchange-base-url}") String exchangeBaseUrl,
+                            RestClient.Builder restClientBuilder) {
+        this.accountsClient = restClientBuilder.baseUrl(accountsBaseUrl).build();
+        this.cashClient = restClientBuilder.baseUrl(cashBaseUrl).build();
+        this.transferClient = restClientBuilder.baseUrl(transferBaseUrl).build();
+        this.exchangeClient = restClientBuilder.baseUrl(exchangeBaseUrl).build();
     }
 
     public AccountResponse getUserProfile(String login, String bearer) {

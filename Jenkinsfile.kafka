@@ -9,9 +9,17 @@ pipeline {
         string(name: 'K8S_NAMESPACE', defaultValue: 'default', description: 'Kubernetes namespace')
         string(name: 'VALUES_FILE', defaultValue: 'deploy/helm/kafka/values-single-node.yaml', description: 'Helm values file for Kafka chart')
         string(name: 'EXTRA_SET_FLAGS', defaultValue: 'configurationOverrides.auto.create.topics.enable=true', description: 'Additional --set flags (space-separated)')
+        booleanParam(name: 'DEPLOY_ZIPKIN', defaultValue: true, description: 'Deploy Zipkin along with Kafka')
+        booleanParam(name: 'DEPLOY_PROMETHEUS', defaultValue: true, description: 'Deploy Prometheus along with Kafka')
+        booleanParam(name: 'DEPLOY_GRAFANA', defaultValue: true, description: 'Deploy Grafana along with Kafka')
+        booleanParam(name: 'DEPLOY_ELK', defaultValue: true, description: 'Deploy ELK along with Kafka')
     }
     environment {
         KAFKA_CHART_DIR = 'deploy/helm/umbrella/charts'
+        ZIPKIN_CHART = 'deploy/helm/zipkin'
+        PROM_CHART = 'deploy/helm/prometheus'
+        GRAFANA_CHART = 'deploy/helm/grafana'
+        ELK_CHART = 'deploy/helm/elk'
     }
     stages {
         stage('Checkout') {
@@ -28,6 +36,24 @@ pipeline {
                         error "Kafka chart not found in ${env.KAFKA_CHART_DIR}"
                     }
                     env.KAFKA_CHART = chart
+                }
+            }
+        }
+        stage('Deploy Observability') {
+            steps {
+                script {
+                    if (params.DEPLOY_ZIPKIN) {
+                        sh "helm upgrade --install bank-zipkin ${env.ZIPKIN_CHART} --namespace ${params.K8S_NAMESPACE} --wait --timeout 3m"
+                    }
+                    if (params.DEPLOY_PROMETHEUS) {
+                        sh "helm upgrade --install bank-prometheus ${env.PROM_CHART} --namespace ${params.K8S_NAMESPACE} --wait --timeout 3m"
+                    }
+                    if (params.DEPLOY_GRAFANA) {
+                        sh "helm upgrade --install bank-grafana ${env.GRAFANA_CHART} --namespace ${params.K8S_NAMESPACE} --wait --timeout 3m"
+                    }
+                    if (params.DEPLOY_ELK) {
+                        sh "helm upgrade --install bank-elk ${env.ELK_CHART} --namespace ${params.K8S_NAMESPACE} --wait --timeout 5m"
+                    }
                 }
             }
         }

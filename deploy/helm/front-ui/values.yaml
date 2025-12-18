@@ -32,3 +32,7 @@ env:
   SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_TOKEN_URI: "{{ printf \"http://%s-keycloak:8080/realms/bank/protocol/openid-connect/token\" .Release.Name }}"
   SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_JWK_SET_URI: "{{ printf \"http://%s-keycloak:8080/realms/bank/protocol/openid-connect/certs\" .Release.Name }}"
   SPRING_SECURITY_OAUTH2_CLIENT_PROVIDER_KEYCLOAK_END_SESSION_URI: "http://keycloak.127.0.0.1.nip.io/realms/bank/protocol/openid-connect/logout"
+  ZIPKIN_ENDPOINT: "http://bank-zipkin:9411/api/v2/spans"
+  LOGS_KAFKA_BOOTSTRAP_SERVERS: "{{ printf \"%s-kafka:9092\" .Release.Name }}"
+  LOGS_TOPIC: "service-logs"
+  LOGS_KAFKA_ENABLED: "true"

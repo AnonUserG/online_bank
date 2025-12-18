@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "elk.fullname" . }}-elasticsearch
+  labels:
+    {{- include "elk.labels" . | nindent 4 }}
+    app.kubernetes.io/component: elasticsearch
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ include "elk.name" . }}-elasticsearch
+      app.kubernetes.io/instance: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        {{- include "elk.labels" . | nindent 8 }}
+        app.kubernetes.io/name: {{ include "elk.name" . }}-elasticsearch
+        app.kubernetes.io/component: elasticsearch
+    spec:
+      containers:
+        - name: elasticsearch
+          image: "{{ .Values.elasticsearch.image }}:{{ .Values.elasticsearch.tag }}"
+          imagePullPolicy: {{ .Values.elasticsearch.pullPolicy }}
+          env:
+            - name: discovery.type
+              value: single-node
+          ports:
+            - containerPort: 9200
+              name: http
+          resources:
+            {{- toYaml .Values.elasticsearch.resources | nindent 12 }}
+      nodeSelector:
+        {{- toYaml .Values.nodeSelector | nindent 8 }}
+      affinity:
+        {{- toYaml .Values.affinity | nindent 8 }}
+      tolerations:
+        {{- toYaml .Values.tolerations | nindent 8 }}

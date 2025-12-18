@@ -14,6 +14,7 @@ spring:
       properties:
         enable.idempotence: false
         max.in.flight.requests.per.connection: 1
+      observation-enabled: true
     properties:
       spring.json.add.type.headers: false
 
@@ -24,3 +25,23 @@ app:
     period-ms: ${GENERATION_PERIOD_MS:3000}
   kafka:
     rates-topic: ${KAFKA_RATES_TOPIC:fx-rates}
+
+management:
+  tracing:
+    sampling:
+      probability: 1.0
+    propagation:
+      type: b3
+  zipkin:
+    tracing:
+      endpoint: ${ZIPKIN_ENDPOINT:http://zipkin:9411/api/v2/spans}
+  metrics:
+    tags:
+      application: ${spring.application.name}
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true
+  endpoints:
+    web:
+      exposure:
+        include: health, info, refresh, prometheus

@@ -28,11 +28,12 @@ public class AccountsClient {
 
     public AccountsClient(@Value("${accounts.base-url:http://accounts-service:8082}") String baseUrl,
                           @Value("${accounts.connect-timeout:500}") long connectTimeoutMs,
-                          @Value("${accounts.read-timeout:2000}") long readTimeoutMs) {
+                          @Value("${accounts.read-timeout:2000}") long readTimeoutMs,
+                          RestClient.Builder restClientBuilder) {
         var factory = new SimpleClientHttpRequestFactory();
         factory.setConnectTimeout(Duration.ofMillis(connectTimeoutMs));
         factory.setReadTimeout(Duration.ofMillis(readTimeoutMs));
-        this.restClient = RestClient.builder()
+        this.restClient = restClientBuilder
                 .requestFactory(factory)
                 .baseUrl(baseUrl)
                 .build();

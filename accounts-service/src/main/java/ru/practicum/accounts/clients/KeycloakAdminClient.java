@@ -31,8 +31,9 @@ public class KeycloakAdminClient {
     public KeycloakAdminClient(@Value("${keycloak.base-url:http://keycloak:8080}") String baseUrl,
                                @Value("${keycloak.realm:bank}") String realm,
                                @Value("${keycloak.admin.username:admin}") String adminUsername,
-                               @Value("${keycloak.admin.password:admin123}") String adminPassword) {
-        this.restClient = RestClient.builder().baseUrl(baseUrl).build();
+                               @Value("${keycloak.admin.password:admin123}") String adminPassword,
+                               RestClient.Builder restClientBuilder) {
+        this.restClient = restClientBuilder.baseUrl(baseUrl).build();
         this.realm = realm;
         this.adminUsername = adminUsername;
         this.adminPassword = adminPassword;
@@ -162,6 +163,5 @@ public class KeycloakAdminClient {
     private record TokenResponse(@JsonProperty("access_token") String accessToken) {
     }
 }
-
 
 

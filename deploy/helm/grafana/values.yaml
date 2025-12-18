@@ -1,0 +1,20 @@
+image:
+  repository: grafana/grafana
+  tag: "10.4.5"
+  pullPolicy: IfNotPresent
+
+service:
+  type: ClusterIP
+  port: 3000
+
+adminUser: admin
+adminPassword: admin123
+
+datasource:
+  url: http://bank-prometheus:9090
+
+resources: {}
+
+nodeSelector: {}
+tolerations: []
+affinity: {}

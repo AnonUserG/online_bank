@@ -5,7 +5,7 @@
 ## Запуск
 
 ```bash
-git clone --branch kuber --single-branch https://github.com/AnonUserG/online_bank.git
+git clone --branch elk --single-branch https://github.com/AnonUserG/online_bank.git
 cd online_bank
 ```
 
@@ -30,30 +30,39 @@ docker build --no-cache -t bank/front-ui:latest                     front-ui
 kubectl apply -f deploy/k8s/kafka-standalone.yaml
 
 
-# 4) Готовим зависимости чарта и деплоим с nip.io
+# 4) Разворачиваем Zipkin (один инстанс)
+helm upgrade --install bank-zipkin deploy/helm/zipkin --timeout 5m --wait
+# (опционально) посмотреть UI локально: kubectl port-forward svc/bank-zipkin 9411:9411
+
+# 5) Разворачиваем Prometheus, Grafana и ELK (по одному инстансу)
+helm upgrade --install bank-prometheus deploy/helm/prometheus --timeout 5m --wait
+helm upgrade --install bank-grafana deploy/helm/grafana --timeout 5m --wait
+helm upgrade --install bank-elk deploy/helm/elk --timeout 5m --wait
+
+# 6) Готовим зависимости чарта и деплоим с nip.io
 helm dependency update deploy/helm/umbrella
 helm upgrade --install bank deploy/helm/umbrella -f deploy/helm/umbrella/values-nipio-example.yaml --set kafka.enabled=false --timeout 5m --wait
 
 kubectl rollout restart deploy/bank-exchange-generator-service
 kubectl rollout restart deploy/bank-exchange-service
 
-# 5) Ждём готовности
+# 7) Ждём готовности
 kubectl get pods
 
-# 6) Заливаем данные в Postgres (job использует тот же SQL, что и init-db/01-init-schemas.sql)
+# 8) Заливаем данные в Postgres (job использует тот же SQL, что и init-db/01-init-schemas.sql)
 kubectl apply -f deploy/k8s/init-db-job.yaml
 
-# 7) Тоннель для ingress/LoadBalancer в отдельном окне
+# 9) Тоннель для ingress/LoadBalancer в отдельном окне
 minikube tunnel
 
-# 8) Обновить ConfigMap содержимым keycloak/realm-export.json
+# 10) Обновить ConfigMap содержимым keycloak/realm-export.json
 kubectl create configmap bank-keycloak-realm --from-file=realm-export.json=keycloak/realm-export.json --dry-run=client -o yaml | kubectl apply -f -
 
-# 9) Перезапустить Keycloak, чтобы подтянул новый файл
+# 11) Перезапустить Keycloak, чтобы подтянул новый файл
 kubectl delete pod -l app.kubernetes.io/name=keycloak
 kubectl rollout status deployment/bank-keycloak --timeout=150s
 
-# 10) Импортировать/обновить realm bank через kcadm
+# 12) Импортировать/обновить realm bank через kcadm
 $POD = kubectl get pod -l app.kubernetes.io/name=keycloak -o jsonpath='{.items[0].metadata.name}'
 kubectl exec $POD -- bash -c "/opt/keycloak/bin/kcadm.sh config credentials --server http://localhost:8080 --realm master --user admin --password admin123 \
 && /opt/keycloak/bin/kcadm.sh update realms/bank -f /opt/keycloak/data/import/realm-export.json"
@@ -64,7 +73,14 @@ kubectl exec $POD -- bash -c "/opt/keycloak/bin/kcadm.sh config credentials --se
 логин= bob
 пароль= password
 
-# 11) Почистить все
+# UI/порт-форварды для наблюдаемости (в отдельных терминалах)
+# Zipkin:        kubectl port-forward svc/bank-zipkin 9411:9411       # http://localhost:9411
+# Prometheus:    kubectl port-forward svc/bank-prometheus 9090:9090   # http://localhost:9090
+# Grafana:       kubectl port-forward svc/bank-grafana 3000:3000      # http://localhost:3000 (admin/admin123)
+# Kibana:        kubectl port-forward svc/bank-elk-kibana 5601:5601   # http://localhost:5601
+# Логи летят в Kafka topic service-logs и индексируются Logstash в service-logs-*
+
+# 13) Почистить все
 minikube stop
 minikube delete
 

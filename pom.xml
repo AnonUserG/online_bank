@@ -37,6 +37,7 @@
 		<postgresql.version>42.7.2</postgresql.version>
 		<lombok.version>1.18.30</lombok.version>
 		<mapstruct.version>1.5.5.Final</mapstruct.version>
+		<logstash-logback-encoder.version>7.4</logstash-logback-encoder.version>
 		<docker.image.prefix>bank</docker.image.prefix>
 	</properties>
 
@@ -85,6 +86,37 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-security</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>io.micrometer</groupId>
+			<artifactId>micrometer-registry-prometheus</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>io.micrometer</groupId>
+			<artifactId>micrometer-tracing-bridge-brave</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>io.zipkin.reporter2</groupId>
+			<artifactId>zipkin-reporter-brave</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>net.logstash.logback</groupId>
+			<artifactId>logstash-logback-encoder</artifactId>
+			<version>${logstash-logback-encoder.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>io.github.bullet-tooth</groupId>
+			<artifactId>logback-kafka-appender</artifactId>
+			<version>0.3.0</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.kafka</groupId>
+			<artifactId>kafka-clients</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.codehaus.janino</groupId>
+			<artifactId>janino</artifactId>
 		</dependency>
 
 		<dependency>
